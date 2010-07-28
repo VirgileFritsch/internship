@@ -1,0 +1,504 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Notes personnelles, étude des appariements blobs 2D/blobs 3D %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% SUJET: 12207
+%% Contraste: right-left
+
+% FWHM3D = FWHM = 5.
+% SMIN3D = SMIN = 5
+% THETA3D = THETA = 3.3
+
+nb_2D_blobs = 10
+nb_3D_blobs = 2
+
+Blob 2D 0 :
+[[  3. 100.]]
+Naive approach: 2
+
+
+2D blob 1 is thought to be related to 3D blob 1 at 83.202004%
+Blob 2D 1 :
+[[  1.          83.20200372]
+ [  3.          16.79799628]]
+Naive approach: 1
+
+
+2D blob 2 is thought to be related to 3D blob 1 at 87.746964%
+Blob 2D 2 :
+[[  1.          87.74696373]
+ [  3.          12.25303627]]
+Naive approach: 1
+
+
+2D blob 3 is thought to be related to 3D blob 1 at 87.330066%
+Blob 2D 3 :
+[[  1.          87.33006602]
+ [  3.          12.66993398]]
+Naive approach: 1
+
+
+2D blob 4 is thought to be related to 3D blob 1 at 86.651684%
+Blob 2D 4 :
+[[  1.          86.65168431]
+ [  3.          13.34831569]]
+Naive approach: 1
+
+
+2D blob 5 is thought to be related to 3D blob 1 at 86.776912%
+Blob 2D 5 :
+[[  1.          86.77691166]
+ [  3.          13.22308834]]
+Naive approach: 1
+
+
+Blob 2D 6 :
+[[   3.  100.]]
+Naive approach: 1
+
+
+Blob 2D 7 :
+[[   3.  100.]]
+Naive approach: 1
+
+
+Blob 2D 8 :
+[[  3. 100.]]
+Naive approach: 2
+
+
+Blob 2D 9 :
+[[  1.          14.39046281]
+ [  3.          85.60953719]]
+Naive approach: 1
+
+Commentaires :
+Cinq blobs 2D restent seuls (dont 4 à 100%). On comprend mal cet état de fait
+puisque les blobs 2D sont issus de la projection des données
+d'activation 3D. De plus, en regardant la valeur moyenne des blobs 2D
+restés seuls, on s'aperçoit que même si celle-ci est moindre que celle
+des blobs appariés, elle n'en est pas moins significative.
+On va donc cherché à faire apparaitre des blobs 3D qui auraient
+éventuellement été ratés en jouant d'abord sur les facteurs de
+lissage.
+--> Ca ne change rien, les blobs3D sont juste plus petits, comme cela
+était prévisible.
+
+nb_2D_blobs = 10
+nb_3D_blobs = 3
+
+Blob 2D 0 :
+[[  4. 100.]]
+Naive approach: 1
+
+
+2D blob 1 is thought to be related to 3D blob 3 at 74.299858%
+Blob 2D 1 :
+[[  2.           7.58259578]
+ [  3.          74.29985788]
+ [  4.          18.11754633]]
+Naive approach: 3
+
+
+2D blob 2 is thought to be related to 3D blob 3 at 71.516994%
+Blob 2D 2 :
+[[  2.          11.4010839 ]
+ [  3.          71.51699449]
+ [  4.          17.08192161]]
+Naive approach: 3
+
+
+2D blob 3 is thought to be related to 3D blob 3 at 68.101187%
+Blob 2D 3 :
+[[  2.          21.49895856]
+ [  3.          68.1011867 ]
+ [  4.          10.39985474]]
+Naive approach: 3
+
+
+2D blob 4 is thought to be related to 3D blob 3 at 62.078010%
+Blob 2D 4 :
+[[  2.          27.00138734]
+ [  3.          62.07801019]
+ [  4.          10.92060248]]
+Naive approach: 3
+
+
+2D blob 5 is thought to be related to 3D blob 3 at 70.733512%
+Blob 2D 5 :
+[[  2.          18.48809721]
+ [  3.          70.73351188]
+ [  4.          10.77839091]]
+Naive approach: 3
+
+
+Blob 2D 6 :
+[[   4.  100.]]
+Naive approach: 2
+
+
+Blob 2D 7 :
+[[   4.  100.]]
+Naive approach: 2
+
+
+Blob 2D 8 :
+[[   4.  100.]]
+Naive approach: 1
+
+
+Blob 2D 9 :
+[[  2.           5.14508239]
+ [  3.          13.65006165]
+ [  4.          81.20485596]]
+Naive approach: 3
+
+On peut aussi envisager d'augmenter le seuil de formation des blobs 2D
+(theta).
+En pratique, dans ce cas, le porter à 3.8 devrait permettre de faire disparaitre
+les blobs 2D qui ne s'associent à aucun blob 3D.
+
+nb_2D_blobs = 5
+nb_3D_blobs = 2
+
+2D blob 0 is thought to be related to 3D blob 1 at 83.202004%
+Blob 2D 0 :
+[[  1.          83.20200372]
+ [  3.          16.79799628]]
+Naive approach: 1
+
+
+2D blob 1 is thought to be related to 3D blob 1 at 87.746964%
+Blob 2D 1 :
+[[  1.          87.74696373]
+ [  3.          12.25303627]]
+Naive approach: 1
+
+
+2D blob 2 is thought to be related to 3D blob 1 at 87.330066%
+Blob 2D 2 :
+[[  1.          87.33006602]
+ [  3.          12.66993398]]
+Naive approach: 1
+
+
+2D blob 3 is thought to be related to 3D blob 1 at 86.651684%
+Blob 2D 3 :
+[[  1.          86.65168431]
+ [  3.          13.34831569]]
+Naive approach: 1
+
+
+2D blob 4 is thought to be related to 3D blob 1 at 86.225087%
+Blob 2D 4 :
+[[  1.          86.22508657]
+ [  3.          13.77491343]]
+Naive approach: 1
+
+
+Notons que l'approche contraire, qui consiste à diminuer le seuil de
+formation des blobs 3D, conduit à l'apparition de nombreux plus petits
+blobs 3D, concentrés essentiellement dans les régions où des blobs 3D
+étaient déjà présents. Malheureusement, les nouveaux blobs 3D
+n'apparaissent pas forcément à proximité des blobs 2D esseulés, qui le
+restent donc.
+
+nb_2D_blobs = 10
+nb_3D_blobs = 23
+
+2D blob 0 is thought to be related to 3D blob 16 at 84.412721%
+Blob 2D 0 :
+[[ 16.          84.41272109]
+ [ 24.          15.58727868]]
+Naive approach: 16
+
+
+2D blob 1 is thought to be related to 3D blob 20 at 85.951366%
+Blob 2D 1 :
+[[ 20.          85.95136588]
+ [ 24.          12.30962362]]
+Naive approach: 20
+
+
+2D blob 2 is thought to be related to 3D blob 20 at 87.452653%
+Blob 2D 2 :
+[[ 20.          87.45265299]
+ [ 24.          12.21193854]]
+Naive approach: 20
+
+
+2D blob 3 is thought to be related to 3D blob 20 at 87.183447%
+Blob 2D 3 :
+[[ 20.          87.18344724]
+ [ 24.          12.64866238]]
+Naive approach: 20
+
+
+2D blob 4 is thought to be related to 3D blob 20 at 86.535670%
+Blob 2D 4 :
+[[ 20.          86.5356696 ]
+ [ 24.          13.33044413]]
+Naive approach: 20
+
+
+2D blob 5 is thought to be related to 3D blob 20 at 86.550575%
+Blob 2D 5 :
+[[ 20.          86.55057485]
+ [ 24.          13.18859908]]
+Naive approach: 20
+
+
+2D blob 6 is thought to be related to 3D blob 10 at 68.224181%
+Blob 2D 6 :
+[[  6.          20.87394746]
+ [ 10.          68.22418136]
+ [ 24.          10.90152637]]
+Naive approach: 10
+
+
+Blob 2D 7 :
+[[ 24.          99.96128739]]
+Naive approach: 9
+
+
+Blob 2D 8 :
+[[ 24.          99.99947018]]
+Naive approach: 10
+
+
+2D blob 9 is thought to be related to 3D blob 4 at 54.197546%
+Blob 2D 9 :
+[[  4.          54.19754626]
+ [ 20.          34.57848037]
+ [ 24.           9.26901601]]
+Naive approach: 4
+
+
+
+%% Contraste: left-right
+
+% FWHM3D = FWHM = 5.
+% SMIN3D = SMIN = 5
+% THETA3D = THETA = 3.3
+
+nb_2D_blobs = 20
+nb_3D_blobs = 4
+
+2D blob 0 is thought to be related to 3D blob 4 at 87.194899%
+Blob 2D 0 :
+[[  4.          87.19489857]
+ [  5.          12.80510128]]
+Naive approach: 4
+
+
+2D blob 1 is thought to be related to 3D blob 4 at 87.570167%
+Blob 2D 1 :
+[[  4.          87.57016746]
+ [  5.          12.42983173]]
+Naive approach: 4
+
+
+2D blob 2 is thought to be related to 3D blob 4 at 87.191792%
+Blob 2D 2 :
+[[  4.          87.19179196]
+ [  5.          12.80820685]]
+Naive approach: 4
+
+
+2D blob 3 is thought to be related to 3D blob 4 at 86.614737%
+Blob 2D 3 :
+[[  4.          86.61473745]
+ [  5.          13.38526252]]
+Naive approach: 4
+
+
+2D blob 4 is thought to be related to 3D blob 4 at 87.471752%
+Blob 2D 4 :
+[[  4.          87.47175231]
+ [  5.          12.52824769]]
+Naive approach: 4
+
+
+2D blob 5 is thought to be related to 3D blob 4 at 87.050800%
+Blob 2D 5 :
+[[  4.         87.0507999]
+ [  5.         12.9492001]]
+Naive approach: 4
+
+
+2D blob 6 is thought to be related to 3D blob 4 at 84.728718%
+Blob 2D 6 :
+[[  4.          84.72871787]
+ [  5.          15.27128213]]
+Naive approach: 4
+
+
+2D blob 7 is thought to be related to 3D blob 4 at 59.891543%
+Blob 2D 7 :
+[[  4.          59.89154318]
+ [  5.          40.10845682]]
+Naive approach: 4
+
+
+2D blob 8 is thought to be related to 3D blob 4 at 87.915513%
+Blob 2D 8 :
+[[  4.          87.91551275]
+ [  5.          12.08448725]]
+Naive approach: 4
+
+
+2D blob 9 is thought to be related to 3D blob 4 at 87.293586%
+Blob 2D 9 :
+[[  4.          87.29358633]
+ [  5.          12.70641367]]
+Naive approach: 4
+
+
+2D blob 10 is thought to be related to 3D blob 4 at 85.454628%
+Blob 2D 10 :
+[[  4.          85.45462774]
+ [  5.          14.54537226]]
+Naive approach: 4
+
+
+2D blob 11 is thought to be related to 3D blob 4 at 83.342777%
+Blob 2D 11 :
+[[  4.          83.34277658]
+ [  5.          16.65722342]]
+Naive approach: 4
+
+
+Blob 2D 12 :
+[[  5.          99.99992944]]
+Naive approach: 2
+
+
+2D blob 13 is thought to be related to 3D blob 2 at 82.916697%
+Blob 2D 13 :
+[[  2.          82.9166971 ]
+ [  5.          17.01301236]]
+Naive approach: 2
+
+
+Blob 2D 14 :
+[[  4.          28.44400358]
+ [  5.          71.55599642]]
+Naive approach: 4
+
+
+2D blob 15 is thought to be related to 3D blob 4 at 85.690234%
+Blob 2D 15 :
+[[  4.          85.69023405]
+ [  5.          14.30976595]]
+Naive approach: 4
+
+
+2D blob 16 is thought to be related to 3D blob 2 at 85.367133%
+Blob 2D 16 :
+[[  2.          85.36713262]
+ [  5.          14.39248854]]
+Naive approach: 2
+
+
+Blob 2D 17 :
+[[  5.          99.99999368]]
+Naive approach: 2
+
+
+2D blob 18 is thought to be related to 3D blob 4 at 48.639172%
+Blob 2D 18 :
+[[  4.         48.6391718]
+ [  5.         51.3608282]]
+Naive approach: 4
+
+
+2D blob 19 is thought to be related to 3D blob 4 at 44.164069%
+Blob 2D 19 :
+[[  4.          44.1640688 ]
+ [  5.          55.83592773]]
+Naive approach: 4
+
+Avec un seuil de 3.8, on fait disparaitre trop de blobs 2D.
+On ne retiendra donc pas l'idée de jouer sur le seuil, celle-ci étant
+source d'oublis.
+On peut de toute manière continuer à travailler avec des blobs 2D loin
+de tout blob 3D, meme si cela augmente la proportion de paires incomplètes.
+
+nb_2D_blobs = 11
+nb_3D_blobs = 4
+
+2D blob 0 is thought to be related to 3D blob 4 at 87.194899%
+Blob 2D 0 :
+[[  4.          87.19489857]
+ [  5.          12.80510128]]
+Naive approach: 4
+
+
+2D blob 1 is thought to be related to 3D blob 4 at 87.570167%
+Blob 2D 1 :
+[[  4.          87.57016746]
+ [  5.          12.42983173]]
+Naive approach: 4
+
+
+2D blob 2 is thought to be related to 3D blob 4 at 87.191792%
+Blob 2D 2 :
+[[  4.          87.19179196]
+ [  5.          12.80820685]]
+Naive approach: 4
+
+
+2D blob 3 is thought to be related to 3D blob 4 at 86.614737%
+Blob 2D 3 :
+[[  4.          86.61473745]
+ [  5.          13.38526252]]
+Naive approach: 4
+
+
+2D blob 4 is thought to be related to 3D blob 4 at 87.471752%
+Blob 2D 4 :
+[[  4.          87.47175231]
+ [  5.          12.52824769]]
+Naive approach: 4
+
+
+2D blob 5 is thought to be related to 3D blob 4 at 87.050800%
+Blob 2D 5 :
+[[  4.         87.0507999]
+ [  5.         12.9492001]]
+Naive approach: 4
+
+
+2D blob 6 is thought to be related to 3D blob 4 at 84.728718%
+Blob 2D 6 :
+[[  4.          84.72871787]
+ [  5.          15.27128213]]
+Naive approach: 4
+
+
+2D blob 7 is thought to be related to 3D blob 4 at 59.891543%
+Blob 2D 7 :
+[[  4.          59.89154318]
+ [  5.          40.10845682]]
+Naive approach: 4
+
+
+2D blob 8 is thought to be related to 3D blob 4 at 87.915513%
+Blob 2D 8 :
+[[  4.          87.91551275]
+ [  5.          12.08448725]]
+Naive approach: 4
+
+
+2D blob 9 is thought to be related to 3D blob 4 at 87.293586%
+Blob 2D 9 :
+[[  4.          87.29358633]
+ [  5.          12.70641367]]
+Naive approach: 4
+
+
+2D blob 10 is thought to be related to 3D blob 4 at 86.272994%
+Blob 2D 10 :
+[[  4.          86.27299406]
+ [  5.          13.72700594]]
+Naive approach: 4
