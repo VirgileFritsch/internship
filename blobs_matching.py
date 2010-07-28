@@ -39,6 +39,7 @@ blobs3D_to_show = [-3]
 # eventually choose 2D blobs to show (from 0 to ..., -3 to show everything,
 # -2 for original blobs)
 blobs2D_to_show = [-3]
+blobs2D_to_show_bckup = np.array(blobs2D_to_show).copy()
 
 gamma_prime = 0.9
 sigma = 5.
@@ -198,6 +199,17 @@ class Blob3D(Blob):
         if not self.is_node():
             Blob3D.nodes[self.id] = self
 
+    def merge_child(self, child):
+        if (child in self.children):
+            self.remove_child(child)
+            self.vertices = np.vstack((self.vertices, child.vertices))
+            self.vertices_id = np.hstack((self.vertices_id, child.vertices_id))
+            self.activation = np.concatenate((self.activation,
+                                              child.activation))
+            del Blob3D.leaves[child.id]
+        else:
+            print "Warning, not a child of this 3D blob."
+
     ### Methods for plotting
     def get_xpos(self):
         if self.already_displayed:
@@ -310,6 +322,7 @@ class Blob2D(Blob):
         # O is "we don't know about the association")
         self.associated_3D_blob = None
         self.potentialy_associated = []
+        self.association_probas = None
         
         # tag to avoid displaying the same blob several times
         self.already_displayed = False
@@ -549,6 +562,7 @@ def plot_matching_results(proba, dist, gamma, gamma_prime, sigma,
     print "nb_3D_blobs = %d\n" %nb_3Dblobs
 
     new_blobs2D_list = copy.deepcopy(blobs2D_list)
+    #new_blobs2D_list = blobs2D_list
     for blob2D in np.arange(nb_2Dblobs):
         if blobs2D_list[blob2D].parent:
             parent_id = blobs2D_list[blob2D].parent.id
@@ -665,21 +679,60 @@ def mesh_to_graph(vertices, poly):
 # --------- Script (part 1): IO and data handling -----------
 # -----------------------------------------------------------
 
+if SUBJECT == "group":
+    GA_TYPE = "vrfx"
+    r_path = "/data/home/virgile/virgile_internship"
+    m_path = "%s/group_analysis/smoothed_FWHM0" % r_path
+    lmesh_path_gii = "%s/group_analysis/surf/lh.r.white.normalized.gii" % r_path
+    rmesh_path_gii = "%s/group_analysis/surf/rh.r.white.normalized.gii" % r_path
+    glm_ltex_path = "%s/left_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
+    glm_rtex_path = "%s/right_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
+    glm_data_path = "%s/%s_%s.nii" % (m_path, GA_TYPE, CONTRAST)
+    OUTPUT_DIR = "%s/%s/results" %(m_path, CONTRAST)
+    lresults_output = "left_%s_%s_results.tex" % (GA_TYPE, CONTRAST)
+    rresults_output = "right_%s_%s_results.tex" %(GA_TYPE, CONTRAST)
+    OUTPUT_ENTIRE_DOMAIN_DIR = "%s/%s/results_entire_domain" %(m_path, CONTRAST)
+    lresults_entire_domain_output = "left_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
+    rresults_entire_domain_output = \
+        "right_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
+    OUTPUT_AUX_DIR = "%s/%s/results_aux" %(m_path, CONTRAST)
+    lresults_aux_output = "left_%s_%s_results_aux.tex" \
+                          % (GA_TYPE, CONTRAST)
+    rresults_aux_output = "right_%s_%s_results_aux.tex" \
+                          % (GA_TYPE, CONTRAST)
+    OUTPUT_LARGE_AUX_DIR = "%s/%s/results_aux_large" %(m_path, CONTRAST)
+    lresults_aux_large_output = "left_%s_%s_results_aux_large.tex" \
+                          % (GA_TYPE, CONTRAST)
+    rresults_aux_large_output = "right_%s_%s_results_aux_large.tex" \
+                          % (GA_TYPE, CONTRAST)
+    OUTPUT_COORD_DIR = "%s/%s/results_coord" %(m_path, CONTRAST)
+    lresults_coord_output = "left_%s_%s_results_coord.tex" \
+                            % (GA_TYPE, CONTRAST)
+    rresults_coord_output = "right_%s_%s_results_coord.tex" \
+                            % (GA_TYPE, CONTRAST)
+    blobs3D_path = "%s/blobs3D_%s/leaves.nii" % (m_path, CONTRAST)
+    
 ### Load left hemisphere data
 lmesh = loadImage(lmesh_path_gii)
-c, n, t  = lmesh.getArrays()
+if SUBJECT == "group":
+    c, t  = lmesh.getArrays()
+else:
+    c, n, t  = lmesh.getArrays()
 lvertices = c.getData()
 ltriangles = t.getData()
 glm_ltex = tio.Texture(glm_ltex_path).read(glm_ltex_path)
-blobs2D_ltex = tio.Texture(blobs2D_ltex_path).read(blobs2D_ltex_path)
+blobs2D_ltex = -np.ones(glm_ltex.data.shape[0])
 
 ### Load right hemisphere data
 rmesh = loadImage(rmesh_path_gii)
-c, n, t  = rmesh.getArrays()
+if SUBJECT == "group":
+    c, t  = rmesh.getArrays()
+else:
+    c, n, t  = rmesh.getArrays()
 rvertices = c.getData()
 rtriangles = t.getData()
 glm_rtex = tio.Texture(glm_rtex_path).read(glm_rtex_path)
-blobs2D_rtex = tio.Texture(blobs2D_rtex_path).read(blobs2D_rtex_path)
+blobs2D_rtex = -np.ones(glm_rtex.data.shape[0])
 
 ### Construct 2D blobs hierarchy
 # right hemisphere processing
@@ -713,6 +766,11 @@ if rnroi:
             for child in children[i]:
                 current_blob.add_child(Blob2D.all_blobs[child+1])
     nb_rnroi = rnroi.k
+
+    rleaves = rnroi.reduce_to_leaves()
+    idx = rleaves.discrete_features['index']
+    for k in range(rleaves.k):
+        blobs2D_rtex[idx[k]] =  k
 else:
     nb_rnroi = 0
     
@@ -745,6 +803,11 @@ if lnroi:
             current_blob.change_to_node()
             for child in children[i]:
                 current_blob.add_child(Blob2D.all_blobs[child+1+nb_rnroi])
+
+    lleaves = lnroi.reduce_to_leaves()
+    idx = lleaves.discrete_features['index']
+    for k in range(lleaves.k):
+        blobs2D_ltex[idx[k]] =  k
     
 # finally get the 2D blobs that are leaves
 blobs2D_list = Blob2D.leaves.values()
@@ -796,7 +859,7 @@ if nroi3D:
             for child in children[i]:
                 current_blob.add_child(Blob3D.all_blobs[child+1])
     
-# finally get the 2D blobs that are leaves
+# finally get the 3D blobs that are leaves
 blobs3D_vertices = []
 blobs3D_list = []
 for b in Blob3D.leaves.values():
@@ -914,9 +977,9 @@ plot_matching_results(proba, dist_display, gamma_prime, gamma, sigma,
 
 ### Replace severals 2D blobs linked to the same 3D one by their hierarchichal
 ### parent
-nb_leaves = 0
-while nb_leaves != Blob2D.leaves.__len__():
-    nb_leaves = Blob2D.leaves.__len__()
+old_proba = []
+while np.any(old_proba != proba):
+    old_proba = proba
     for leaf in Blob2D.leaves.values():
         if not isinstance(leaf.parent, None.__class__):
             brothers = leaf.parent.children
@@ -926,9 +989,23 @@ while nb_leaves != Blob2D.leaves.__len__():
         brothers_id = []
         for j in brothers:
             brothers_id.append(j.id)
+            # brother is associated to the same 3D blob
             if ((j.associated_3D_blob == leaf.associated_3D_blob) and \
                 (not isinstance(j.associated_3D_blob, None.__class__))):
                 all_linked_to_the_same &= True
+            # brother has only one potentially associated blob (and it is
+            # the which "leaf" is associated to)
+            #elif ((np.shape(j.potentially_associated)[0] == 1) and \
+            #     (not isinstance(leaf.associated_3D_blob, None.__class__)) and \
+            #      (leaf.associated_3D_blob in j.potentially_associated)):
+            #    all_linked_to_the_same &= True
+            # maybe current leaf is not associated with a blob but has
+            # a potentially associated one
+            #elif ((np.shape(leaf.potentially_associated)[0] == 1) and \
+            #     (not isinstance(j.associated_3D_blob, None.__class__)) and \
+            #      (j.associated_3D_blob in leaf.potentially_associated)):
+            #    all_linked_to_the_same &= True
+            # brother can be linked to another 3D blob
             else:
                 all_linked_to_the_same &= False
         if (all_linked_to_the_same and \
@@ -938,86 +1015,72 @@ while nb_leaves != Blob2D.leaves.__len__():
             parent_blob.associate_3Dblob(linked_3D_blob)
             for i in brothers_id:
                 parent_blob.merge_child(Blob2D.leaves[i])
+  
+    ### Compute distances between each pair of (3D blobs)-(new 2D blobs centers)
+    dist, dist_arg = compute_distances(blobs3D_vertices, Blob2D.leaves.values())
+    dist_display = np.zeros((len(Blob2D.leaves.values()), nb_3D_blobs+1))
+    dist_display[:,0:-1] = dist.copy()
+    dist_display = np.sqrt(dist_display)
+    dist_display[:,nb_3D_blobs] = -1.
     
+    ### Match each new 2D blobs with one or several 3D blob(s)
+    proba, gamma = compute_association_proba(Blob2D.leaves.values(),
+                                             nb_3D_blobs, gamma_prime, sigma,
+                                             dist_display[:,0:-1],
+                                             exclusion=False)
 
-### Compute distances between each pair of (3D blobs)-(new 2D blobs centers)
-dist, dist_arg = compute_distances(blobs3D_vertices, Blob2D.leaves.values())
-dist_display = np.zeros((Blob2D.leaves.values().__len__(), nb_3D_blobs+1))
-dist_display[:,0:-1] = dist.copy()
-dist_display = np.sqrt(dist_display)
-dist_display[:,nb_3D_blobs] = -1.
-
-### Match each new 2D blobs with one or several 3D blob(s)
-proba, gamma = compute_association_proba(Blob2D.leaves.values(), nb_3D_blobs,
-                                         gamma_prime, sigma,
-                                         dist_display[:,0:-1],
-                                         exclusion=True)
 ### Post-processing the results
-plot_matching_results(proba, dist_display, gamma_prime, gamma, sigma,
-                      './results/ver0/new_res.txt', Blob2D.leaves.values(),
-                      blobs3D_list, explode=False)
-
-#------------------------------------------------------
-#- DISTRIBUTE NODES VERTICES TO THEIR (LEAVES) CHILDREN
-
-def get_related_blobs(root):
-    if root.is_leaf():
-        if (not isinstance(root.associated_3D_blob, None.__class__)):
-            res_related = [root.associated_3D_blob.id]
-        else:
-            res_related = []
-        res_leaves = [root.id]
-    else:
-        res_related = []
-        res_leaves = []
-        for child in root.children:
-            tmp_related, tmp_leaves = get_related_blobs(child)
-            for item in tmp_related:
-                res_related.append(item)
-            for item in tmp_leaves:
-                res_leaves.append(item)
-    
-    return np.unique(res_related), np.unique(res_leaves)
-
-for node in Blob2D.nodes.values():
-    related_blobs, leaves = get_related_blobs(node)
-    related_blobs_vertices = []
-    if (related_blobs.__len__() == 0 or (0 in related_blobs)):
-        continue
-    for i in related_blobs:
-        if i != 0:
-            related_blobs_vertices.append(Blob3D.leaves[i].vertices)
-    separation = compute_distances_aux(related_blobs_vertices, node.vertices)[0]
-    attribution = np.argmin(separation, 1)
-    for i in np.arange(related_blobs.__len__()):
-        vertices_to_distribute = node.vertices[attribution == i]
-        vertices_to_distribute_id = node.vertices_id[attribution == i]
-        for l in leaves:
-            blob = Blob2D.leaves[l]
-            if (not isinstance(blob.associated_3D_blob, None.__class__) and \
-                blob.associated_3D_blob.id == related_blobs[i]):
-                if l in blobs2D_to_show:
-                    print "> 2D blob %d receives vertices from 2D blob %d, choice was amongst (" %(l,node.id),
-                    for j in related_blobs:
-                        print j,
-                    print ")"
-                blob.add_vertices(vertices_to_distribute)
-                blob.add_vertices_id(vertices_to_distribute_id)
-
-
+new_blobs2D_list = plot_matching_results(proba, dist_display, gamma_prime,
+                                         gamma, sigma,
+                                         './results/ver0/new_res.txt',
+                                         Blob2D.leaves.values(), blobs3D_list,
+                                         explode=False)
 ### Mayavi Plot
+# colors
+lut_colors = np.array([[64,0,64,255], [128,0,64,255], [192,0,64,255],
+                       [64,0,128,255], [128,0,128,255], [192,0,128,255],
+                       [64,0,192,255], [128,0,192,255], [192,0,192,255],
+                       [0,64,64,255], [0,128,64,255], [0,192,64,255],
+                       [0,64,128,255], [0,128,128,255], [0,192,128,255],
+                       [0,64,192,255], [0,128,192,255], [0,192,192,255],
+                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
+                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
+                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
+                                        [64,128,64,255], [64,192,64,255],
+                       [64,64,128,255], [64,128,128,255], [64,192,128,255],
+                       [64,64,192,255], [64,128,192,255], [64,192,192,255],
+                       [192,64,64,255], [192,128,64,255], [192,192,64,255],
+                       [192,64,128,255], [192,128,128,255], [192,192,128,255],
+                       [192,64,192,255], [192,128,192,255],                 
+                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
+                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
+                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
+                       [64,128,64,255], [128,128,64,255], [192,128,64,255],
+                       [64,128,128,255],                  [192,128,128,255],
+                       [64,128,192,255], [128,128,192,255], [192,128,192,255],
+                       [128,64,64,255], [128,128,64,255], [128,192,64,255],
+                       [128,64,128,255], [128,128,128,255], [128,192,128,255],
+                       [128,64,192,255], [128,128,192,255], [128,192,192,255],
+                       [64,0,0,255], [128,0,0,255], [192,0,0,255],
+                       [0,64,0,255], [0,128,0,255], [0,128,0,255],
+                       [0,0,64,255], [0,0,128,255], [0,0,192,255],
+                       [64,64,0,255], [128,64,0,255], [192,64,0,255],
+                       [64,128,0,255], [128,128,0,255], [192,128,0,255],
+                       [64,192,0,255], [128,192,0,255], [192,192,0,255]],
+                      dtype=int)
+                       
 # choose textures
-ltex = blobs2D_ltex.data.copy()
-rtex = blobs2D_rtex.data.copy()
-if blobs2D_to_show[0] != -2.:
-    if blobs2D_to_show[0] == -3.:
+ltex = blobs2D_ltex.copy()
+rtex = blobs2D_rtex.copy()
+if blobs2D_to_show_bckup[0] != -2.:
+    if blobs2D_to_show_bckup[0] == -3.:
         blobs2D_to_show = []
         for b in Blob2D.leaves.values():
             blobs2D_to_show.append(b.id)
     ltex[:] = -1.
     rtex[:] = -1.
     for i in blobs2D_to_show:
-        blob = Blob2D.leaves[i]
+        blob = Blob2D.all_blobs[i]
         if (not isinstance(blob.associated_3D_blob, None.__class__)):
             value = blob.associated_3D_blob.id
         else:
@@ -1027,18 +1090,47 @@ if blobs2D_to_show[0] != -2.:
         else:
             rtex[blob.vertices_id] = value
 
-
 # plot left hemisphere
-mayavi.triangular_mesh(lvertices[:,0], lvertices[:,1], lvertices[:,2],
-                       ltriangles, scalars=ltex,
-                       transparent=False, opacity=1.)
+mayavi_lmesh = mayavi.triangular_mesh(lvertices[:,0], lvertices[:,1],
+                                      lvertices[:,2], ltriangles, scalars=ltex,
+                                      transparent=False, opacity=1.)
+lhlut = mayavi_lmesh.module_manager.scalar_lut_manager.lut.table.to_array()
+if np.amax(ltex)+1 == 0.:
+    factor = 1
+else:
+    factor = int(np.amax(ltex)+1)
+ratio = 256./factor
+# brain background color
+lhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
+# 2D blobs with linkage doubt color
+lhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
+# 2D blobs associated to no 3D blob color
+lhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
+mayavi_lmesh.module_manager.scalar_lut_manager.lut.table = lhlut
+for i in range(2,factor):
+    lhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
 
 # plot right hemisphere
-mayavi.triangular_mesh(rvertices[:,0], rvertices[:,1], rvertices[:,2],
-                       rtriangles, scalars=rtex,
-                       transparent=False, opacity=1.)
+mayavi_rmesh = mayavi.triangular_mesh(rvertices[:,0], rvertices[:,1],
+                                      rvertices[:,2], rtriangles, scalars=rtex,
+                                      transparent=False, opacity=1.)
+rhlut = mayavi_rmesh.module_manager.scalar_lut_manager.lut.table.to_array()
+if np.amax(rtex)+1 == 0.:
+    factor = 1
+else:
+    factor = int(np.amax(rtex)+1)
+ratio = 256./factor
+# brain background color
+rhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
+# 2D blobs with linkage doubt color
+rhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
+# 2D blobs associated to no 3D blob color
+rhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
+mayavi_rmesh.module_manager.scalar_lut_manager.lut.table = rhlut
+for i in range(2,factor):
+    rhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
 
-# enable rendering (because we have disabled it)
+# enable mayavi rendering (because we have disabled it)
 blobs3D_mayavi_src.scene.disable_render = False 
 
 
@@ -1142,73 +1234,430 @@ for blob2D in Blob2D.nodes.values():
                     [child.get_ypos(),blob2D.get_ypos()],
                     color='black')
 
-### Finally write output (right and left) textures
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
-output_rtex = tio.Texture(rresults_output, data=rtex)
-output_rtex.write()
-output_ltex = tio.Texture(lresults_output, data=ltex)
-output_ltex.write()
+if blobs2D_to_show_bckup[0] == -3.:
+    ### Finally write output (right and left) textures
+    out_dir = "%s_level%03d" %(OUTPUT_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_rtex = tio.Texture("%s/%s" %(out_dir,rresults_output), data=rtex)
+    output_rtex.write()
+    output_ltex = tio.Texture("%s/%s" %(out_dir,lresults_output), data=ltex)
+    output_ltex.write()
+    
+    ### Output textures with entire domain
+    # fill the entire blob domain
+    ltex_entire = ltex.copy()
+    rtex_entire = rtex.copy()
+    for b in Blob2D.nodes.values():
+        if b.hemisphere == "left":
+            the_tex = ltex_entire
+        else:
+            the_tex = rtex_entire
+        for i in b.vertices_id:
+            if the_tex[i] == -1:
+                the_tex[i] = -0.7
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_ENTIRE_DOMAIN_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_entire_domain_rtex = tio.Texture("%s/%s" %(out_dir,rresults_entire_domain_output), data=rtex_entire)
+    output_entire_domain_rtex.write()
+    output_entire_domain_ltex = tio.Texture("%s/%s" %(out_dir,lresults_entire_domain_output), data=ltex_entire)
+    output_entire_domain_ltex.write()
+    
+    ### Auxiliary results large domain
+    all_rvertices = np.array([[],[],[]], ndmin=2).T
+    all_lvertices = np.array([[],[],[]], ndmin=2).T
+    all_rvertices_id = np.array([], dtype=int)
+    all_lvertices_id = np.array([], dtype=int)
+    for b in Blob2D.all_blobs.values():
+        if b.hemisphere == "right":
+            all_rvertices = np.concatenate((all_rvertices, b.vertices))
+            all_rvertices_id = np.concatenate((all_rvertices_id, b.vertices_id))
+        else:
+            all_lvertices = np.concatenate((all_lvertices, b.vertices))
+            all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
+    # right hemisphere cluster
+    rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
+    rtex_aux = -np.ones(rtex.shape[0])
+    rtex_aux[all_rvertices_id] = rassignment
+    # left hemisphere cluster
+    lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
+    ltex_aux = -np.ones(ltex.shape[0])
+    ltex_aux[all_lvertices_id] = lassignment
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_LARGE_AUX_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux)
+    output_aux_large_rtex.write()
+    output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux)
+    output_aux_large_ltex.write()
+    
+    ### Auxiliary results restricted domain
+    # right hemisphere cluster
+    all_rblobs_vertices = rvertices[rtex != -1]
+    rassignment = cl.voronoi(all_rblobs_vertices, max_pos[rindex])
+    rtex_aux = -np.ones(rtex.shape[0])
+    rtex_aux[rtex != -1] = rassignment
+    # left hemisphere cluster
+    all_lblobs_vertices = lvertices[ltex != -1]
+    lassignment = cl.voronoi(all_lblobs_vertices, max_pos[lindex])
+    ltex_aux = -np.ones(ltex.shape[0])
+    ltex_aux[ltex != -1] = lassignment
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_AUX_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_aux_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_output), data=rtex_aux)
+    output_aux_rtex.write()
+    output_aux_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_output), data=ltex_aux)
+    output_aux_ltex.write()
+    
+    ### Coordinates results
+    rtex_coord = -np.ones(rtex.size)
+    ltex_coord = -np.ones(ltex.size)
+    for b in Blob2D.leaves.values():
+        if b.hemisphere == "right":
+            rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+        else:
+            ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_coord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_coord_output), data=rtex_coord)
+    output_coord_rtex.write()
+    output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
+    output_coord_ltex.write()
 
-### Auxiliary results large domain
-for b in Blob2D.nodes.values():
-    all_rvertices = np.array([], ndmin=2)
-    all_lvertices = np.array([], ndmin=2)
-    all_rvertices_id = np.array([], ndmin=2)
-    all_lvertices_id = np.array([], ndmin=2)
-    if b.hemisphere == "right":
-        all_rvertices = np.concatenate((all_rvertices, b.vertices))
-        all_rvertices_id = np.concatenate((all_rvertices_id, b.vertices_id))
-    else:
-        all_lvertices = np.concatenate((all_lvertices, b.vertices))
-        all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
-# right hemisphere cluster
-rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
-rtex_aux = -np.ones(rtex.shape[0])
-rtex_aux[all_rvertices_id] = rassignment
-# left hemisphere cluster
-lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
-ltex_aux = -np.ones(ltex.shape[0])
-ltex_aux[all_lvertices_id] = lassignment
-# write results
-if not os.path.exists(OUTPUT_AUX_DIR):
-    os.makedirs(OUTPUT_AUX_DIR)
-output_aux_rtex = tio.Texture(rresults_aux_large_output, data=rtex_aux)
-output_aux_rtex.write()
-output_aux_ltex = tio.Texture(lresults_aux_large_output, data=ltex_aux)
-output_aux_ltex.write()
 
-### Auxiliary results restricted domain
-# right hemisphere cluster
-all_rblobs_vertices = rvertices[rtex != -1]
-rassignment = cl.voronoi(all_rblobs_vertices, max_pos[rindex])
-rtex_aux = -np.ones(rtex.shape[0])
-rtex_aux[rtex != -1] = rassignment
-# left hemisphere cluster
-all_lblobs_vertices = lvertices[ltex != -1]
-lassignment = cl.voronoi(all_lblobs_vertices, max_pos[lindex])
-ltex_aux = -np.ones(ltex.shape[0])
-ltex_aux[ltex != -1] = lassignment
-# write results
-if not os.path.exists(OUTPUT_AUX_DIR):
-    os.makedirs(OUTPUT_AUX_DIR)
-output_aux_rtex = tio.Texture(rresults_aux_output, data=rtex_aux)
-output_aux_rtex.write()
-output_aux_ltex = tio.Texture(lresults_aux_output, data=ltex_aux)
-output_aux_ltex.write()
+#--------------------------------------------
+#--------------------------------------------
+#----- OTHERS LEVELS ------------------------
+#--------------------------------------------
+#--------------------------------------------
+level = 1
+while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
+    level += 1
+    # Merge all leaves in their parent structure
+    # (keep lonely leaves as they are)
+    for l in Blob2D.leaves.values():
+        if l.parent is not None:
+            l.parent.merge_child(l)
+        elif l.parent is None and l.associated_3D_blob is not None and \
+             l.associated_3D_blob.id == 0:
+            del Blob2D.leaves[l.id]
+    
+    for l in Blob3D.leaves.values():
+        if l.parent is not None:
+            l.parent.merge_child(l)
+    
+    for l in Blob2D.nodes.values():
+        l.already_displayed = False
+    for l in Blob3D.nodes.values():
+        l.already_displayed = False
+    for l in Blob2D.leaves.values():
+        l.already_displayed = False
+    for l in Blob3D.leaves.values():
+        l.already_displayed = False
+    
+    # Algorithm initialization
+    blobs2D_list = Blob2D.leaves.values()
+    blobs3D_vertices = []
+    blobs3D_list = []
+    for b in Blob3D.leaves.values():
+        blobs3D_vertices.append(b.vertices)
+        blobs3D_list.append(b)
+    nb_3D_blobs = blobs3D_vertices.__len__()
+    
+    #--------------------
+    #- FIRST ASSOCIATION
+        
+    ### Compute distances between each pair of (3D blobs)-(2D blobs centers)
+    dist, dist_arg = compute_distances(blobs3D_vertices, blobs2D_list)
+    dist_display = np.zeros((blobs2D_list.__len__(), nb_3D_blobs+1))
+    dist_display[:,0:-1] = dist.copy()
+    dist_display = np.sqrt(dist_display)
+    dist_display[:,nb_3D_blobs] = -1.
+    
+    ### Match each 2D blob with one or several 3D blob(s)
+    proba, gamma = compute_association_proba(blobs2D_list, nb_3D_blobs,
+                                             gamma_prime, sigma,
+                                             dist_display[:,0:-1])
+    
+    ### Post-processing the results
+    new_blobs2D_list = plot_matching_results(proba, dist_display, gamma_prime,
+                                             gamma, sigma, './results/ver0/2nd_res.txt',
+                                             blobs2D_list, blobs3D_list,
+                                             explode=False)
+    
+    #-----------------------------------------
+    #- MERGING SOME 2D BLOBS INTO THEIR PARENT
+    
+    ### Replace severals 2D blobs linked to the same 3D one by their hierarchichal
+    ### parent
+    old_proba = []
+    while np.any(old_proba != proba):
+        old_proba = proba
+        for leaf in Blob2D.leaves.values():
+            if not isinstance(leaf.parent, None.__class__):
+                brothers = leaf.parent.children
+            else:
+                brothers = []
+            all_linked_to_the_same = True
+            brothers_id = []
+            for j in brothers:
+                brothers_id.append(j.id)
+                # brother is associated to the same 3D blob
+                if ((j.associated_3D_blob == leaf.associated_3D_blob) and \
+                    (not isinstance(j.associated_3D_blob, None.__class__))):
+                    all_linked_to_the_same &= True
+                # brother has only one potentially associated blob (and it is
+                # the which "leaf" is associated to)
+                #elif ((np.shape(j.potentially_associated)[0] == 1) and \
+                #     (not isinstance(leaf.associated_3D_blob, None.__class__)) and \
+                #      (leaf.associated_3D_blob in j.potentially_associated)):
+                #    all_linked_to_the_same &= True
+                # maybe current leaf is not associated with a blob but has
+                # a potentially associated one
+                #elif ((np.shape(leaf.potentially_associated)[0] == 1) and \
+                #     (not isinstance(j.associated_3D_blob, None.__class__)) and \
+                #      (j.associated_3D_blob in leaf.potentially_associated)):
+                #    all_linked_to_the_same &= True
+                # brother can be linked to another 3D blob
+                else:
+                    all_linked_to_the_same &= False
+            if (all_linked_to_the_same and \
+                (not isinstance(leaf.parent, None.__class__))):
+                linked_3D_blob = leaf.associated_3D_blob
+                parent_blob = leaf.parent
+                parent_blob.associate_3Dblob(linked_3D_blob)
+                for i in brothers_id:
+                    parent_blob.merge_child(Blob2D.leaves[i])
+      
+        ### Compute distances between each pair of (3D blobs)-(new 2D blobs centers)
+        dist, dist_arg = compute_distances(blobs3D_vertices, Blob2D.leaves.values())
+        dist_display = np.zeros((len(Blob2D.leaves.values()), nb_3D_blobs+1))
+        dist_display[:,0:-1] = dist.copy()
+        dist_display = np.sqrt(dist_display)
+        dist_display[:,nb_3D_blobs] = -1.
+        
+        ### Match each new 2D blobs with one or several 3D blob(s)
+        proba, gamma = compute_association_proba(Blob2D.leaves.values(),
+                                                 nb_3D_blobs, gamma_prime, sigma,
+                                                 dist_display[:,0:-1],
+                                                 exclusion=False)
+    
+    ### Post-processing the results
+    new_blobs2D_list = plot_matching_results(proba, dist_display, gamma_prime,
+                                             gamma, sigma,
+                                             './results/ver0/2nd_new_res.txt',
+                                             Blob2D.leaves.values(), blobs3D_list,
+                                             explode=False)
+    
+    # construct a list of associated 2D blobs for each 3D blobs
+    # and sort it by their link probability value
+    nested_association_lists = []
+    if blobs3D_list:
+        for i in np.arange(nb_3D_blobs):
+            association_list = []
+            for blob2D in Blob2D.leaves.values():
+                if (blobs3D_list[i] in blob2D.potentialy_associated):
+                    association_list.append(blob2D)
+                elif (not isinstance(blob2D.associated_3D_blob,None.__class__) and \
+                      blob2D.associated_3D_blob.id == blobs3D_list[i].id):
+                    association_list.insert(0,blob2D)
+            association_list = sort_list_by_link(association_list,
+                                                 blobs3D_list[i].id)
+            if association_list:
+                association_list.insert(0, blobs3D_list[i].id)
+                nested_association_lists.append(association_list)
+        
+    # set matplotlib figure basis
+    fig = plt.figure(level)
+    ax = fig.add_axes([0, 0, 1, 1], frameon=False)
+    #ax.text((Blob3D.default_xpos-Blob2D.default_xpos)/2, 15,
+    #        "Subject %s, Contrast %s, gamma=%g\n2nd level" %(SUBJECT, CONTRAST, gamma),
+    #        horizontalalignment='center')
+    ax.set_xlim(Blob2D.default_xpos-15, Blob3D.default_xpos+15)
+    #ax.set_ylim(-Blob2DDisplay.spacing*np.amax([nb_linked,
+    #                                            nb_3D_blobs-1]),25)
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    lines_colors = ['b','g','c','m','k','y', (1.,0.5,0.), (0.5,0.5,0.), (0.,0.5,0.)]
+    
+    # display the associated blobs
+    for l in nested_association_lists:
+        blob3D_id = l[0]
+        for b in l[1:]:
+            b.display(ax)
+        Blob3D.leaves[blob3D_id].display(ax)
+        for b in l[1:]:
+            probas = b.association_probas
+            link = probas[probas[:,0]==blob3D_id,:][0,1]
+            if link > 100*threshold_sure:
+                ax.plot([b.get_xpos()+Blob2D.radius/2.,
+                         Blob3D.leaves[blob3D_id].get_xpos()-Blob3D.radius/2.],
+                        [b.get_ypos(),Blob3D.leaves[blob3D_id].get_ypos()],
+                        color=lines_colors[blob3D_id%lines_colors.__len__()])
+            elif link > 100*threshold_maybe:
+                ax.plot([b.get_xpos()+Blob2D.radius/2.,
+                         Blob3D.leaves[blob3D_id].get_xpos()-Blob3D.radius/2.],
+                        [b.get_ypos(),Blob3D.leaves[blob3D_id].get_ypos()],
+                        '--', color=lines_colors[blob3D_id%lines_colors.__len__()])
+    
+    # display 2D blobs that have no children and no association
+    for blob2D in Blob2D.leaves.values():
+        if (blob2D.associated_3D_blob == Blob3D.all_blobs[0]):
+            blob2D.display(ax, circle_color='red')
+        else:
+            blob2D.display(ax, circle_color='green')
+    
+    # display 3D blobs hierarchy
+    for blob3D in Blob3D.nodes.values():
+        blob3D.display(ax)
+        for child in blob3D.children:
+            ax.plot([child.get_xpos()+Blob3D.radius/2.,
+                     blob3D.get_xpos()-Blob3D.radius/2.],
+                    [child.get_ypos(),blob3D.get_ypos()],
+                    color='black')
+    
+    # display 2D blobs hierarchy
+    for blob2D in Blob2D.nodes.values():
+        blob2D.display(ax)
+        for child in blob2D.children:
+            if child.is_sub_blob:
+                ax.plot([child.get_xpos()-Blob2D.radius/2.,
+                         blob2D.get_xpos()+Blob2D.radius/2.],
+                        [child.get_ypos(),blob2D.get_ypos()],
+                        color=lines_colors[blob2D.id%lines_colors.__len__()])
+            else:
+                ax.plot([child.get_xpos()-Blob2D.radius/2.,
+                         blob2D.get_xpos()+Blob2D.radius/2.],
+                        [child.get_ypos(),blob2D.get_ypos()],
+                        color='black')
 
-### Coordinates results
-rtex_coord = -np.ones(rtex.size)
-ltex_coord = -np.ones(ltex.size)
-for b in Blob2D.leaves.values():
-    if b.hemisphere == "right":
-        rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
-    else:
-        ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
-# write results
-if not os.path.exists(OUTPUT_COORD_DIR):
-    os.makedirs(OUTPUT_COORD_DIR)
-output_coord_rtex = tio.Texture(rresults_coord_output, data=rtex_coord)
-output_coord_rtex.write()
-output_coord_ltex = tio.Texture(lresults_coord_output, data=ltex_coord)
-output_coord_ltex.write()
+    # Update Blob2D.all_blobs
+    # /!\ fixme : very dirty !
+    for leaf in Blob2D.leaves.values():
+        Blob2D.all_blobs[leaf.id] = leaf
+    for node in Blob2D.nodes.values():
+        Blob2D.all_blobs[node.id] = node
+    if blobs2D_to_show_bckup[0] == -3.:
+        # choose textures
+        ltex = blobs2D_ltex.copy()
+        rtex = blobs2D_rtex.copy()
+        if blobs2D_to_show_bckup[0] != -2.:
+            if blobs2D_to_show_bckup[0] == -3.:
+                blobs2D_to_show = []
+                for b in Blob2D.leaves.values():
+                    blobs2D_to_show.append(b.id)
+            ltex[:] = -1.
+            rtex[:] = -1.
+            for i in blobs2D_to_show:
+                blob = Blob2D.leaves[i]
+                if (not isinstance(blob.associated_3D_blob, None.__class__)):
+                    value = blob.associated_3D_blob.id
+                else:
+                    value = -0.7
+                if blob.hemisphere == "left":
+                    ltex[blob.vertices_id] = value
+                else:
+                    rtex[blob.vertices_id] = value
+
+        ### Finally write output (right and left) textures
+        out_dir = "%s_level%03d" %(OUTPUT_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_rtex = tio.Texture("%s/%s" %(out_dir,rresults_output), data=rtex)
+        output_rtex.write()
+        output_ltex = tio.Texture("%s/%s" %(out_dir,lresults_output), data=ltex)
+        output_ltex.write()
+        
+        ### Output textures with entire domain
+        # fill the entire blob domain
+        ltex_entire = ltex.copy()
+        rtex_entire = rtex.copy()
+        for b in Blob2D.nodes.values():
+            if b.hemisphere == "left":
+                the_tex = ltex_entire
+            else:
+                the_tex = rtex_entire
+            for i in b.vertices_id:
+                if the_tex[i] == -1:
+                    the_tex[i] = -0.7
+        # write results
+        out_dir = "%s_level%03d" %(OUTPUT_ENTIRE_DOMAIN_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_entire_domain_rtex = tio.Texture("%s/%s" %(out_dir,rresults_entire_domain_output), data=rtex_entire)
+        output_entire_domain_rtex.write()
+        output_entire_domain_ltex = tio.Texture("%s/%s" %(out_dir,lresults_entire_domain_output), data=ltex_entire)
+        output_entire_domain_ltex.write()
+        
+        ### Auxiliary results large domain
+        all_rvertices = np.array([[],[],[]], ndmin=2).T
+        all_lvertices = np.array([[],[],[]], ndmin=2).T
+        all_rvertices_id = np.array([], dtype=int)
+        all_lvertices_id = np.array([], dtype=int)
+        for b in Blob2D.all_blobs.values():
+            if b.hemisphere == "right":
+                all_rvertices = np.concatenate((all_rvertices, b.vertices))
+                all_rvertices_id = np.concatenate((all_rvertices_id, b.vertices_id))
+            else:
+                all_lvertices = np.concatenate((all_lvertices, b.vertices))
+                all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
+        # right hemisphere cluster
+        rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
+        rtex_aux = -np.ones(rtex.shape[0])
+        rtex_aux[all_rvertices_id] = rassignment
+        # left hemisphere cluster
+        lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
+        ltex_aux = -np.ones(ltex.shape[0])
+        ltex_aux[all_lvertices_id] = lassignment
+        # write results
+        out_dir = "%s_level%03d" %(OUTPUT_LARGE_AUX_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux)
+        output_aux_large_rtex.write()
+        output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux)
+        output_aux_large_ltex.write()
+        
+        ### Auxiliary results restricted domain
+        # right hemisphere cluster
+        all_rblobs_vertices = rvertices[rtex != -1]
+        rassignment = cl.voronoi(all_rblobs_vertices, max_pos[rindex])
+        rtex_aux = -np.ones(rtex.shape[0])
+        rtex_aux[rtex != -1] = rassignment
+        # left hemisphere cluster
+        all_lblobs_vertices = lvertices[ltex != -1]
+        lassignment = cl.voronoi(all_lblobs_vertices, max_pos[lindex])
+        ltex_aux = -np.ones(ltex.shape[0])
+        ltex_aux[ltex != -1] = lassignment
+        # write results
+        out_dir = "%s_level%03d" %(OUTPUT_AUX_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_aux_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_output), data=rtex_aux)
+        output_aux_rtex.write()
+        output_aux_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_output), data=ltex_aux)
+        output_aux_ltex.write()
+        
+        ### Coordinates results
+        rtex_coord = -np.ones(rtex.size)
+        ltex_coord = -np.ones(ltex.size)
+        for b in Blob2D.leaves.values():
+            if b.hemisphere == "right":
+                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+            else:
+                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+        # write results
+        out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_coord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_coord_output), data=rtex_coord)
+        output_coord_rtex.write()
+        output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
+        output_coord_ltex.write()
