@@ -95,7 +95,7 @@ for hemisphere in ['left','right']:
     print "  * Writing output texture"
     sys.stdout.flush()
     # create a new texture object
-    output_tex = tio.Texture(smoothed_tex_path, data=smoothed_activation_data[0])
+    output_tex = tio.Texture(smoothed_tex_path, data=smoothed_activation_data)
     # write the file
     output_tex.write()
 
