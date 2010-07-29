@@ -70,9 +70,10 @@ for hemisphere in ['left','right']:
     print "  * Getting information from input texture"
     sys.stdout.flush()
     # load texture
-    input_tex = tio.Texture(orig_tex_path).read(orig_ltex_path)
+    input_tex = tio.Texture(orig_tex_path).read(orig_tex_path)
     # get activation data
     activation_data = input_tex.data
+    activation_data[np.isnan(activation_data)] = 0
         
     ### Construct the weights matrix
     print "  * Computing the weights matrix"
