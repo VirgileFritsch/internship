@@ -14,7 +14,8 @@ import sys
 
 import library_smoothing as smooth
 
-from soma import aims
+from nipy.neurospin.glm_files_layout import tio
+from gifti import loadImage
 
 from database_archi import *
 
@@ -40,11 +41,11 @@ for hemisphere in ['left','right']:
     print "Processing %s hemisphere:" %hemisphere
     sys.stdout.flush()
     if hemisphere == "right":
-        mesh_path_aims = rmesh_path_aims
+        mesh_path = rmesh_path_gii
         orig_tex_path = orig_rtex_path
         smoothed_tex_path = smoothed_rtex_path
     else:
-        mesh_path_aims = lmesh_path_aims
+        mesh_path = lmesh_path_gii
         orig_tex_path = orig_ltex_path
         smoothed_tex_path = smoothed_ltex_path
     
@@ -53,13 +54,13 @@ for hemisphere in ['left','right']:
     print "  * Getting information from input mesh"
     sys.stdout.flush()
     # load mesh
-    R1 = aims.Reader()
-    input_mesh = R1.read(mesh_path_aims)
+    input_mesh = loadImage(mesh_path)
     # get vertices
-    vertices = np.asarray(input_mesh.vertex())
+    c, n, t = input_mesh.getArrays()
+    vertices = c.getData()
     nb_vertices = vertices.shape[0]
     # get polygons
-    polygons = np.asarray(input_mesh.polygon())
+    polygons = t.getData()
     nb_polygons = polygons.shape[0]
     # get edges
     edges = get_edges_from_polygons(polygons, vertices)
@@ -69,14 +70,9 @@ for hemisphere in ['left','right']:
     print "  * Getting information from input texture"
     sys.stdout.flush()
     # load texture
-    R2 = aims.Reader()
-    input_tex = R2.read(orig_tex_path)
+    input_tex = tio.Texture(orig_tex_path).read(orig_ltex_path)
     # get activation data
-    nb_time_samples = int(input_tex.size())
-    activation_data = np.zeros((nb_time_samples, nb_vertices))
-    for ts in np.arange(0, nb_time_samples):
-        activation_data[ts,:] = np.asarray(input_tex[ts].data())
-        activation_data[np.isnan(activation_data)] = 0
+    activation_data = input_tex.data
         
     ### Construct the weights matrix
     print "  * Computing the weights matrix"
@@ -99,17 +95,9 @@ for hemisphere in ['left','right']:
     print "  * Writing output texture"
     sys.stdout.flush()
     # create a new texture object
-    output_tex = aims.TimeTexture_FLOAT()
-    # add data to the texture object
-    for ts in np.arange(0, smoothed_activation_data.shape[0]):
-        tex_ts = output_tex[ts]
-        tex_ts.reserve(nb_vertices)
-        for i in np.arange(nb_vertices):
-            tex_ts.append(smoothed_activation_data[ts,i])
-                
+    output_tex = tio.Texture(smoothed_tex_path, data=smoothed_activation_data[0])
     # write the file
-    W = aims.Writer()
-    W.write(output_tex, smoothed_tex_path)
+    output_tex.write()
 
 """
 # -----------------------------------------------------------
