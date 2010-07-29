@@ -10,7 +10,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-import neurospy.bvfunc.mesh_processing as mep
+import mesh_processing as mep
 
 # -----------------------------------------------------------
 # --------- Functions for validating ------------------------
