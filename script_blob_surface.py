@@ -3,16 +3,49 @@ Script to create blobs on a texture
 """
 
 import numpy as np
-import os.path as op
+import os
 import sys
 
 import nipy.neurospin.graph.field as ff
+import nipy.neurospin.graph.graph as fg
 from nipy.neurospin.spatial_models import hroi
-import neurospy.bvfunc.mesh_processing as mep
 
-from soma import aims
+from nipy.neurospin.glm_files_layout import tio
+from gifti import loadImage
 
 from database_archi import *
+
+def mesh_to_graph(vertices, poly):
+    """
+    This function builds an fff graph from a mesh
+    (Taken from nipy mesh_processing.py but removed the aims dependancy)
+    """
+    V = len(vertices)
+    E = poly.shape[0]
+    edges = np.zeros((3*E,2))
+    weights = np.zeros(3*E)
+
+    for i in range(E):
+        sa = poly[i,0]
+        sb = poly[i,1]
+        sc = poly[i,2]
+        
+        edges[3*i] = np.array([sa,sb])
+        edges[3*i+1] = np.array([sa,sc])
+        edges[3*i+2] = np.array([sb,sc])    
+            
+    G = fg.WeightedGraph(V, edges, weights)
+
+    # symmeterize the graph
+    G.symmeterize()
+
+    # remove redundant edges
+    G.cut_redundancies()
+
+    # make it a metric graph
+    G.set_euclidian(vertices)
+
+    return G
 
 #-------------------------------------------------
 #--- Left hemisphere processing ------------------
@@ -20,16 +53,20 @@ from database_archi import *
 print "Processing left hemisphere.",
 sys.stdout.flush()
 # read the mesh
-R = aims.Reader()
-lmesh = R.read(lmesh_path_aims)
-vertices = lmesh.vertex()
+lmesh = loadImage(lmesh_path_gii)
+if SUBJECT == "group":
+    c, t = lmesh.getArrays()
+else:
+    c, n, t = lmesh.getArrays()
+lvertices = c.getData()
+ltriangles = t.getData()
 print ".",
 sys.stdout.flush()
 # read the contrast texture
-ltex = R.read(glm_ltex_path)
-Fun = np.array(ltex[0].data())
+ltex = tio.Texture(glm_ltex_path).read(glm_ltex_path)
+Fun = np.array(ltex.data)
 Fun[np.isnan(Fun)] = 0
-G = mep.mesh_to_graph(lmesh)
+G = mesh_to_graph(lvertices, ltriangles)
 F = ff.Field(G.V, G.get_edges(), G.get_weights(), Fun)
 print ".",
 sys.stdout.flush()
@@ -67,14 +104,11 @@ if nroi is not None:
 print ".",
 sys.stdout.flush()
 
-# write output 2D blobs texture
-W = aims.Writer()
-nnode = G.V
-textureW = aims.TimeTexture_FLOAT()
-tex = textureW[0] # First Time sample
-tex.reserve(nnode)
-for i in range(nnode): tex.append(label[i])
-W.write(textureW, blobs2D_ltex_path)
+# write output 2D blobs textur
+if not os.path.exists('%s/%s' %(MAIN_PATH, BLOBS2D_SUBDIR)):
+    os.makedirs('%s/%s' %(MAIN_PATH, BLOBS2D_SUBDIR))
+output_tex = tio.Texture(blobs2D_ltex_path, data=label)
+output_tex.write()
 print "done."
 sys.stdout.flush()
 
@@ -84,16 +118,20 @@ sys.stdout.flush()
 print "Processing right hemisphere.",
 sys.stdout.flush()
 # read the mesh
-R = aims.Reader()
-rmesh = R.read(rmesh_path_aims)
-vertices = rmesh.vertex()
+rmesh = loadImage(rmesh_path_gii)
+if SUBJECT == "group":
+    c, t = rmesh.getArrays()
+else:
+    c, n, t = rmesh.getArrays()
+rvertices = c.getData()
+rtriangles = t.getData()
 print ".",
 sys.stdout.flush()
 # read the contrast texture
-rtex = R.read(glm_rtex_path)
-Fun = np.array(rtex[0].data())
+rtex = tio.Texture(glm_rtex_path).read(glm_rtex_path)
+Fun = np.array(rtex.data)
 Fun[np.isnan(Fun)] = 0
-G = mep.mesh_to_graph(rmesh)
+G = mesh_to_graph(rvertices, rtriangles)
 F = ff.Field(G.V, G.get_edges(), G.get_weights(), Fun)
 print ".",
 sys.stdout.flush()
@@ -133,12 +171,7 @@ print ".",
 sys.stdout.flush()
 
 # write output 2D blobs texture
-W = aims.Writer()
-nnode = G.V
-textureW = aims.TimeTexture_FLOAT()
-tex = textureW[0] # First Time sample
-tex.reserve(nnode)
-for i in range(nnode): tex.append(label[i])
-W.write(textureW, blobs2D_rtex_path)
-print "done."
-sys.stdout.flush()
+if not os.path.exists('%s/%s' %(MAIN_PATH, BLOBS2D_SUBDIR)):
+    os.makedirs('%s/%s' %(MAIN_PATH, BLOBS2D_SUBDIR))
+output_tex = tio.Texture(blobs2D_rtex_path, data=label)
+output_tex.write()

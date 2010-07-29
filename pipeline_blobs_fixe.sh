@@ -1,6 +1,6 @@
 #!/bin/bash
 
-scripts=( "smooth_image.py" "script_first_level_localizer.py" "demo_blob_from_image.py" "structured_diffusion_smoothing.py" "script_surface_localizer.py" "script_blob_surface_aims.py" "blobs_matching0_visu.py" )
+scripts=( "smooth_image.py" "script_first_level_localizer.py" "demo_blob_from_image.py" "structured_diffusion_smoothing.py" "script_surface_localizer.py" "script_blob_surface.py" "blobs_matching0_visu.py" )
 
 start=$1
 if [ $2 = "-1" ]
