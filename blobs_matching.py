@@ -25,7 +25,7 @@ import nipy.neurospin.clustering.clustering as cl
 from nipy.neurospin.spatial_models import hroi
 import enthought.mayavi.mlab as mayavi
 from gifti import loadImage
-from scikits.learn import BallTree
+from scikits.learn import ball_tree
 
 from database_archi import *
 
@@ -40,6 +40,10 @@ blobs3D_to_show = [-3]
 # -2 for original blobs)
 blobs2D_to_show = [-3]
 blobs2D_to_show_bckup = np.array(blobs2D_to_show).copy()
+# choose kind of texture to plot with mayavi
+mayavi_outtex_type = "coord"
+# choose level of texture to plot with mayavi
+mayavi_outtex_level = 1
 
 gamma_prime = 0.9
 sigma = 5.
@@ -257,7 +261,7 @@ class Blob3D(Blob):
 
         return res
 
-    def display(self, ax, circle_color='blue', text_color='black'):
+    def display(self, ax, circle_color='#3399ff', text_color='black'):
         if (not self.already_displayed):
             self.xpos = self.get_xpos()
             self.ypos = self.get_ypos()
@@ -434,7 +438,7 @@ class Blob2D(Blob):
             
         return res
     
-    def display(self, ax, text_color='black', circle_color='blue'):
+    def display(self, ax, text_color='black', circle_color='#3399ff'):
         if ((not self.already_displayed) and self.is_leaf()):
             self.xpos = self.get_xpos()
             self.ypos = -(Blob2D.display_id * Blob2D.spacing) - 1
@@ -1035,103 +1039,6 @@ new_blobs2D_list = plot_matching_results(proba, dist_display, gamma_prime,
                                          './results/ver0/new_res.txt',
                                          Blob2D.leaves.values(), blobs3D_list,
                                          explode=False)
-### Mayavi Plot
-# colors
-lut_colors = np.array([[64,0,64,255], [128,0,64,255], [192,0,64,255],
-                       [64,0,128,255], [128,0,128,255], [192,0,128,255],
-                       [64,0,192,255], [128,0,192,255], [192,0,192,255],
-                       [0,64,64,255], [0,128,64,255], [0,192,64,255],
-                       [0,64,128,255], [0,128,128,255], [0,192,128,255],
-                       [0,64,192,255], [0,128,192,255], [0,192,192,255],
-                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
-                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
-                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
-                                        [64,128,64,255], [64,192,64,255],
-                       [64,64,128,255], [64,128,128,255], [64,192,128,255],
-                       [64,64,192,255], [64,128,192,255], [64,192,192,255],
-                       [192,64,64,255], [192,128,64,255], [192,192,64,255],
-                       [192,64,128,255], [192,128,128,255], [192,192,128,255],
-                       [192,64,192,255], [192,128,192,255],                 
-                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
-                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
-                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
-                       [64,128,64,255], [128,128,64,255], [192,128,64,255],
-                       [64,128,128,255],                  [192,128,128,255],
-                       [64,128,192,255], [128,128,192,255], [192,128,192,255],
-                       [128,64,64,255], [128,128,64,255], [128,192,64,255],
-                       [128,64,128,255], [128,128,128,255], [128,192,128,255],
-                       [128,64,192,255], [128,128,192,255], [128,192,192,255],
-                       [64,0,0,255], [128,0,0,255], [192,0,0,255],
-                       [0,64,0,255], [0,128,0,255], [0,128,0,255],
-                       [0,0,64,255], [0,0,128,255], [0,0,192,255],
-                       [64,64,0,255], [128,64,0,255], [192,64,0,255],
-                       [64,128,0,255], [128,128,0,255], [192,128,0,255],
-                       [64,192,0,255], [128,192,0,255], [192,192,0,255]],
-                      dtype=int)
-                       
-# choose textures
-ltex = blobs2D_ltex.copy()
-rtex = blobs2D_rtex.copy()
-if blobs2D_to_show_bckup[0] != -2.:
-    if blobs2D_to_show_bckup[0] == -3.:
-        blobs2D_to_show = []
-        for b in Blob2D.leaves.values():
-            blobs2D_to_show.append(b.id)
-    ltex[:] = -1.
-    rtex[:] = -1.
-    for i in blobs2D_to_show:
-        blob = Blob2D.all_blobs[i]
-        if (not isinstance(blob.associated_3D_blob, None.__class__)):
-            value = blob.associated_3D_blob.id
-        else:
-            value = -0.7
-        if blob.hemisphere == "left":
-            ltex[blob.vertices_id] = value
-        else:
-            rtex[blob.vertices_id] = value
-
-# plot left hemisphere
-mayavi_lmesh = mayavi.triangular_mesh(lvertices[:,0], lvertices[:,1],
-                                      lvertices[:,2], ltriangles, scalars=ltex,
-                                      transparent=False, opacity=1.)
-lhlut = mayavi_lmesh.module_manager.scalar_lut_manager.lut.table.to_array()
-if np.amax(ltex)+1 == 0.:
-    factor = 1
-else:
-    factor = int(np.amax(ltex)+1)
-ratio = 256./factor
-# brain background color
-lhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
-# 2D blobs with linkage doubt color
-lhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
-# 2D blobs associated to no 3D blob color
-lhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
-mayavi_lmesh.module_manager.scalar_lut_manager.lut.table = lhlut
-for i in range(2,factor):
-    lhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
-
-# plot right hemisphere
-mayavi_rmesh = mayavi.triangular_mesh(rvertices[:,0], rvertices[:,1],
-                                      rvertices[:,2], rtriangles, scalars=rtex,
-                                      transparent=False, opacity=1.)
-rhlut = mayavi_rmesh.module_manager.scalar_lut_manager.lut.table.to_array()
-if np.amax(rtex)+1 == 0.:
-    factor = 1
-else:
-    factor = int(np.amax(rtex)+1)
-ratio = 256./factor
-# brain background color
-rhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
-# 2D blobs with linkage doubt color
-rhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
-# 2D blobs associated to no 3D blob color
-rhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
-mayavi_rmesh.module_manager.scalar_lut_manager.lut.table = rhlut
-for i in range(2,factor):
-    rhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
-
-# enable mayavi rendering (because we have disabled it)
-blobs3D_mayavi_src.scene.disable_render = False 
 
 
 def sort_list_by_link(my_list, blob3D_id):
@@ -1234,6 +1141,27 @@ for blob2D in Blob2D.nodes.values():
                     [child.get_ypos(),blob2D.get_ypos()],
                     color='black')
 
+# choose textures
+ltex = blobs2D_ltex.copy()
+rtex = blobs2D_rtex.copy()
+if blobs2D_to_show_bckup[0] != -2.:
+    if blobs2D_to_show_bckup[0] == -3.:
+        blobs2D_to_show = []
+        for b in Blob2D.leaves.values():
+            blobs2D_to_show.append(b.id)
+    ltex[:] = -1.
+    rtex[:] = -1.
+    for i in blobs2D_to_show:
+        blob = Blob2D.all_blobs[i]
+        if (not isinstance(blob.associated_3D_blob, None.__class__)):
+            value = blob.associated_3D_blob.id
+        else:
+            value = -0.7
+        if blob.hemisphere == "left":
+            ltex[blob.vertices_id] = value
+        else:
+            rtex[blob.vertices_id] = value
+
 if blobs2D_to_show_bckup[0] == -3.:
     ### Finally write output (right and left) textures
     out_dir = "%s_level%03d" %(OUTPUT_DIR, 1)
@@ -1279,19 +1207,19 @@ if blobs2D_to_show_bckup[0] == -3.:
             all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
     # right hemisphere cluster
     rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
-    rtex_aux = -np.ones(rtex.shape[0])
-    rtex_aux[all_rvertices_id] = rassignment
+    rtex_aux_large = -np.ones(rtex.shape[0])
+    rtex_aux_large[all_rvertices_id] = rassignment
     # left hemisphere cluster
     lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
-    ltex_aux = -np.ones(ltex.shape[0])
-    ltex_aux[all_lvertices_id] = lassignment
+    ltex_aux_large = -np.ones(ltex.shape[0])
+    ltex_aux_large[all_lvertices_id] = lassignment
     # write results
     out_dir = "%s_level%03d" %(OUTPUT_LARGE_AUX_DIR, 1)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux)
+    output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux_large)
     output_aux_large_rtex.write()
-    output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux)
+    output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux_large)
     output_aux_large_ltex.write()
     
     ### Auxiliary results restricted domain
@@ -1319,9 +1247,9 @@ if blobs2D_to_show_bckup[0] == -3.:
     ltex_coord = -np.ones(ltex.size)
     for b in Blob2D.leaves.values():
         if b.hemisphere == "right":
-            rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+            rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
         else:
-            ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+            ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
     # write results
     out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, 1)
     if not os.path.exists(out_dir):
@@ -1330,6 +1258,23 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_coord_rtex.write()
     output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
     output_coord_ltex.write()
+
+    if mayavi_outtex_level == 1:
+        if mayavi_outtex_type == "aux":
+            mayavi_routtex = rtex_aux_large
+            mayavi_louttex = ltex_aux
+        elif mayavi_outtex_type == "aux_large":
+            mayavi_routtex = rtex_aux_large
+            mayavi_louttex = ltex_aux_large
+        elif mayavi_outtex_type == "coord":
+            mayavi_routtex = rtex_coord
+            mayavi_louttex = ltex_coord
+        elif mayavi_outtex_type == "entire":
+            mayavi_routtex = rtex_entire
+            mayavi_louttex = ltex_entire
+        else:
+            mayavi_routtex = rtex
+            mayavi_louttex = ltex
 
 
 #--------------------------------------------
@@ -1610,19 +1555,19 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
                 all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
         # right hemisphere cluster
         rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
-        rtex_aux = -np.ones(rtex.shape[0])
-        rtex_aux[all_rvertices_id] = rassignment
+        rtex_aux_large = -np.ones(rtex.shape[0])
+        rtex_aux_large[all_rvertices_id] = rassignment
         # left hemisphere cluster
         lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
-        ltex_aux = -np.ones(ltex.shape[0])
-        ltex_aux[all_lvertices_id] = lassignment
+        ltex_aux_large = -np.ones(ltex.shape[0])
+        ltex_aux_large[all_lvertices_id] = lassignment
         # write results
         out_dir = "%s_level%03d" %(OUTPUT_LARGE_AUX_DIR, level)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux)
+        output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux_large)
         output_aux_large_rtex.write()
-        output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux)
+        output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux_large)
         output_aux_large_ltex.write()
         
         ### Auxiliary results restricted domain
@@ -1650,9 +1595,9 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
         ltex_coord = -np.ones(ltex.size)
         for b in Blob2D.leaves.values():
             if b.hemisphere == "right":
-                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
             else:
-                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 1.
+                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
         # write results
         out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, level)
         if not os.path.exists(out_dir):
@@ -1661,3 +1606,119 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
         output_coord_rtex.write()
         output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
         output_coord_ltex.write()
+
+        if mayavi_outtex_level == level:
+            if mayavi_outtex_type == "aux":
+                mayavi_routtex = rtex_aux_large
+                mayavi_louttex = ltex_aux
+            elif mayavi_outtex_type == "aux_large":
+                mayavi_routtex = rtex_aux_large
+                mayavi_louttex = ltex_aux_large
+            elif mayavi_outtex_type == "coord":
+                mayavi_routtex = rtex_coord
+                mayavi_louttex = ltex_coord
+            elif mayavi_outtex_type == "entire":
+                mayavi_routtex = rtex_entire
+                mayavi_louttex = ltex_entire
+            else:
+                mayavi_routtex = rtex
+                mayavi_louttex = ltex
+
+if mayavi_outtex_level == -1 or mayavi_outtex_level > level:
+    if mayavi_outtex_type == "aux":
+        mayavi_routtex = rtex_aux_large
+        mayavi_louttex = ltex_aux
+    elif mayavi_outtex_type == "aux_large":
+        mayavi_routtex = rtex_aux_large
+        mayavi_louttex = ltex_aux_large
+    elif mayavi_outtex_type == "coord":
+        mayavi_routtex = rtex_coord
+        mayavi_louttex = ltex_coord
+    elif mayavi_outtex_type == "entire":
+        mayavi_routtex = rtex_entire
+        mayavi_louttex = ltex_entire
+    else:
+        mayavi_routtex = rtex
+        mayavi_louttex = ltex
+
+
+### Mayavi Plot
+# colors
+lut_colors = np.array([[64,0,64,255], [128,0,64,255], [192,0,64,255],
+                       [64,0,128,255], [128,0,128,255], [192,0,128,255],
+                       [64,0,192,255], [128,0,192,255], [192,0,192,255],
+                       [0,64,64,255], [0,128,64,255], [0,192,64,255],
+                       [0,64,128,255], [0,128,128,255], [0,192,128,255],
+                       [0,64,192,255], [0,128,192,255], [0,192,192,255],
+                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
+                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
+                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
+                                        [64,128,64,255], [64,192,64,255],
+                       [64,64,128,255], [64,128,128,255], [64,192,128,255],
+                       [64,64,192,255], [64,128,192,255], [64,192,192,255],
+                       [192,64,64,255], [192,128,64,255], [192,192,64,255],
+                       [192,64,128,255], [192,128,128,255], [192,192,128,255],
+                       [192,64,192,255], [192,128,192,255],                 
+                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
+                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
+                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
+                       [64,128,64,255], [128,128,64,255], [192,128,64,255],
+                       [64,128,128,255],                  [192,128,128,255],
+                       [64,128,192,255], [128,128,192,255], [192,128,192,255],
+                       [128,64,64,255], [128,128,64,255], [128,192,64,255],
+                       [128,64,128,255], [128,128,128,255], [128,192,128,255],
+                       [128,64,192,255], [128,128,192,255], [128,192,192,255],
+                       [64,0,0,255], [128,0,0,255], [192,0,0,255],
+                       [0,64,0,255], [0,128,0,255], [0,128,0,255],
+                       [0,0,64,255], [0,0,128,255], [0,0,192,255],
+                       [64,64,0,255], [128,64,0,255], [192,64,0,255],
+                       [64,128,0,255], [128,128,0,255], [192,128,0,255],
+                       [64,192,0,255], [128,192,0,255], [192,192,0,255]],
+                      dtype=int)
+                       
+# plot left hemisphere
+mayavi_lmesh = mayavi.triangular_mesh(lvertices[:,0], lvertices[:,1],
+                                      lvertices[:,2], ltriangles,
+                                      scalars=mayavi_louttex,
+                                      transparent=False, opacity=1.)
+lhlut = mayavi_lmesh.module_manager.scalar_lut_manager.lut.table.to_array()
+if np.amax(mayavi_louttex)+1 == 0.:
+    factor = 1
+else:
+    factor = int(np.amax(mayavi_louttex)+1)
+ratio = 256./factor
+# brain background color
+lhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
+# 2D blobs with linkage doubt color
+lhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
+# 2D blobs associated to no 3D blob color
+lhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
+mayavi_lmesh.module_manager.scalar_lut_manager.lut.table = lhlut
+for i in range(2,factor):
+    lhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
+
+# plot right hemisphere
+mayavi_rmesh = mayavi.triangular_mesh(rvertices[:,0], rvertices[:,1],
+                                      rvertices[:,2], rtriangles,
+                                      scalars=mayavi_routtex,
+                                      transparent=False, opacity=1.)
+rhlut = mayavi_rmesh.module_manager.scalar_lut_manager.lut.table.to_array()
+if np.amax(mayavi_routtex)+1 == 0.:
+    factor = 1
+else:
+    factor = int(np.amax(mayavi_routtex)+1)
+ratio = 256./factor
+# brain background color
+rhlut[:np.floor(0.3*ratio),:] = np.array([127,127,127,255])
+# 2D blobs with linkage doubt color
+rhlut[np.floor(0.3*ratio):ratio,:] = np.array([255,255,255,255])
+# 2D blobs associated to no 3D blob color
+rhlut[ratio:2*ratio,:] = np.array([0,0,0,255])
+mayavi_rmesh.module_manager.scalar_lut_manager.lut.table = rhlut
+for i in range(2,factor):
+    rhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[6+i-2]
+
+# enable mayavi rendering (because we have disabled it)
+blobs3D_mayavi_src.scene.disable_render = False 
+# show matplotlib graphics
+plt.show()

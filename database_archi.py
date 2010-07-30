@@ -1,7 +1,8 @@
+#from tmp_subject import *
 import numpy as np
 
 ### Paths
-ROOT_PATH = "/data/home/virgile/virgile_internship"
+ROOT_PATH = "/volatile/subjects_database"
 SUBJECT = "s12069"
 CONTRAST = "audio-video_z_map"
 #------------------------------------------------------
@@ -78,26 +79,26 @@ blobs3D_path = '%s/experiments/%s/leaves.nii' %(MAIN_PATH, BLOBS3D_SUBDIR)
 #-----------------------------------------------------#
 
 ### Blobs matching output
-OUTPUT_DIR = '%s/experiments/results' %(MAIN_PATH)
-lresults_output = '%s/left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_output = '%s/right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+OUTPUT_DIR = '%s/experiments/smoothed_FWHM%g/%s/results' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
 
 ### Blobs matching output (entire domain)
-OUTPUT_ENTIRE_DOMAIN_DIR = '%s/experiments/results_entire_domain' %(MAIN_PATH)
-lresults_entire_domain_output = '%s/left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_ENTIRE_DOMAIN_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_entire_domain_output = '%s/right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_ENTIRE_DOMAIN_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+OUTPUT_ENTIRE_DOMAIN_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_entire_domain' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_entire_domain_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_entire_domain_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
 
 ### Auxiliary results output
-OUTPUT_AUX_DIR = '%s/experiments/results_aux' %(MAIN_PATH)
-lresults_aux_output = '%s/left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_AUX_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_aux_output = '%s/right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_AUX_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+OUTPUT_AUX_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_aux' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_aux_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_aux_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
 
 ### Auxiliary large results output
-OUTPUT_LARGE_AUX_DIR = '%s/experiments/results_aux_large' %(MAIN_PATH)
-lresults_aux_large_output = '%s/left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_LARGE_AUX_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_aux_large_output = '%s/right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_LARGE_AUX_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+OUTPUT_LARGE_AUX_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_aux_large' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_aux_large_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_aux_large_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
 
 ### Coordinates results output
-OUTPUT_COORD_DIR = '%s/experiments/results_coord' %(MAIN_PATH)
-lresults_coord_output = '%s/left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_COORD_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_coord_output = '%s/right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(OUTPUT_COORD_DIR, CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+OUTPUT_COORD_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_coord' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_coord_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_coord_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
