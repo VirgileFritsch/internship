@@ -102,3 +102,8 @@ rresults_aux_large_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %
 OUTPUT_COORD_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_coord' %(MAIN_PATH, FWHM3D, CONTRAST)
 lresults_coord_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
 rresults_coord_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+
+### Former coordinates results output
+OUTPUT_FCOORD_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_fcoord' %(MAIN_PATH, FWHM3D, CONTRAST)
+lresults_fcoord_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+rresults_fcoord_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)

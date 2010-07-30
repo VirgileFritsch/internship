@@ -1241,15 +1241,36 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_aux_rtex.write()
     output_aux_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_output), data=ltex_aux)
     output_aux_ltex.write()
-    
+
     ### Coordinates results
     rtex_coord = -np.ones(rtex.size)
     ltex_coord = -np.ones(ltex.size)
+    max_region = {}
+    max_region_location = {}
+    max_region_hemisphere = {}
     for b in Blob2D.leaves.values():
-        if b.hemisphere == "right":
-            rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
+        if b.associated_3D_blob is not None and \
+           b.associated_3D_blob.id != 0:
+            if b.associated_3D_blob.id in max_region.keys():
+                if max_region[b.associated_3D_blob.id] < b.get_argmax_activation():
+                    max_region[b.associated_3D_blob.id] = \
+                                b.get_argmax_activation()
+                    max_region_location[b.associated_3D_blob.id] = \
+                                b.vertices_id[b.get_argmax_activation()]
+                    max_region_hemisphere[b.associated_3D_blob.id] = \
+                                b.hemisphere
+            else:
+                max_region[b.associated_3D_blob.id] = \
+                                b.get_argmax_activation()
+                max_region_location[b.associated_3D_blob.id] = \
+                                b.vertices_id[b.get_argmax_activation()]
+                max_region_hemisphere[b.associated_3D_blob.id] = \
+                                b.hemisphere
+    for r in max_region.keys():
+        if max_region_hemisphere[r] == "right":
+            rtex_coord[max_region_location[r]] = 10.
         else:
-            ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
+            ltex_coord[max_region_location[r]] = 10.
     # write results
     out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, 1)
     if not os.path.exists(out_dir):
@@ -1258,6 +1279,23 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_coord_rtex.write()
     output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
     output_coord_ltex.write()
+
+    ### Coordinates former results
+    rtex_fcoord = -np.ones(rtex.size)
+    ltex_fcoord = -np.ones(ltex.size)
+    for b in Blob2D.leaves.values():
+        if b.hemisphere == "right":
+            rtex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
+        else:
+            ltex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_FCOORD_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_fcoord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_fcoord_output), data=rtex_fcoord)
+    output_fcoord_rtex.write()
+    output_fcoord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_fcoord_output), data=ltex_fcoord)
+    output_fcoord_ltex.write()
 
     if mayavi_outtex_level == 1:
         if mayavi_outtex_type == "aux":
@@ -1269,6 +1307,9 @@ if blobs2D_to_show_bckup[0] == -3.:
         elif mayavi_outtex_type == "coord":
             mayavi_routtex = rtex_coord
             mayavi_louttex = ltex_coord
+        elif mayavi_outtex_type == "fcoord":
+            mayavi_routtex = rtex_fcoord
+            mayavi_louttex = ltex_fcoord
         elif mayavi_outtex_type == "entire":
             mayavi_routtex = rtex_entire
             mayavi_louttex = ltex_entire
@@ -1589,15 +1630,36 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
         output_aux_rtex.write()
         output_aux_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_output), data=ltex_aux)
         output_aux_ltex.write()
-        
+
         ### Coordinates results
         rtex_coord = -np.ones(rtex.size)
         ltex_coord = -np.ones(ltex.size)
+        max_region = {}
+        max_region_location = {}
+        max_region_hemisphere = {}
         for b in Blob2D.leaves.values():
-            if b.hemisphere == "right":
-                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
+            if b.associated_3D_blob is not None and \
+               b.associated_3D_blob.id != 0:
+                if b.associated_3D_blob.id in max_region.keys():
+                    if max_region[b.associated_3D_blob.id] < b.get_argmax_activation():
+                        max_region[b.associated_3D_blob.id] = \
+                                    b.get_argmax_activation()
+                        max_region_location[b.associated_3D_blob.id] = \
+                                    b.vertices_id[b.get_argmax_activation()]
+                        max_region_hemisphere[b.associated_3D_blob.id] = \
+                                    b.hemisphere
+                else:
+                    max_region[b.associated_3D_blob.id] = \
+                                    b.get_argmax_activation()
+                    max_region_location[b.associated_3D_blob.id] = \
+                                    b.vertices_id[b.get_argmax_activation()]
+                    max_region_hemisphere[b.associated_3D_blob.id] = \
+                                    b.hemisphere
+        for r in max_region.keys():
+            if max_region_hemisphere[r] == "right":
+                rtex_coord[max_region_location[r]] = 10.
             else:
-                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
+                ltex_coord[max_region_location[r]] = 10.
         # write results
         out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, level)
         if not os.path.exists(out_dir):
@@ -1606,6 +1668,23 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
         output_coord_rtex.write()
         output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
         output_coord_ltex.write()
+        
+        ### Coordinates former results
+        rtex_fcoord = -np.ones(rtex.size)
+        ltex_fcoord = -np.ones(ltex.size)
+        for b in Blob2D.leaves.values():
+            if b.hemisphere == "right":
+                rtex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
+            else:
+                ltex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
+        # write results
+        out_dir = "%s_level%03d" %(OUTPUT_FCOORD_DIR, level)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        output_fcoord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_fcoord_output), data=rtex_fcoord)
+        output_fcoord_rtex.write()
+        output_fcoord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_fcoord_output), data=ltex_fcoord)
+        output_fcoord_ltex.write()
 
         if mayavi_outtex_level == level:
             if mayavi_outtex_type == "aux":
@@ -1617,6 +1696,9 @@ while len(Blob2D.nodes) != 0 or len(Blob3D.nodes) != 0:
             elif mayavi_outtex_type == "coord":
                 mayavi_routtex = rtex_coord
                 mayavi_louttex = ltex_coord
+            elif mayavi_outtex_type == "fcoord":
+                mayavi_routtex = rtex_fcoord
+                mayavi_louttex = ltex_fcoord
             elif mayavi_outtex_type == "entire":
                 mayavi_routtex = rtex_entire
                 mayavi_louttex = ltex_entire
@@ -1634,6 +1716,9 @@ if mayavi_outtex_level == -1 or mayavi_outtex_level > level:
     elif mayavi_outtex_type == "coord":
         mayavi_routtex = rtex_coord
         mayavi_louttex = ltex_coord
+    elif mayavi_outtex_type == "fcoord":
+        mayavi_routtex = rtex_fcoord
+        mayavi_louttex = ltex_fcoord
     elif mayavi_outtex_type == "entire":
         mayavi_routtex = rtex_entire
         mayavi_louttex = ltex_entire
