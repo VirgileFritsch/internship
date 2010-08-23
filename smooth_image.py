@@ -19,7 +19,7 @@ from database_archi import *
 # Path to the original image
 #orig_data_path = ?
 
-# Output path
+# Output path for the smoothed image
 #smoothed_data_path = ?
 
 # -----------------------------------------------------------
