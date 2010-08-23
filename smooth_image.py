@@ -9,18 +9,22 @@ import scipy.ndimage as sn
 from nipy.io.imageformats import load, Nifti1Image, save
 
 # -----------------------------------------------------------
-# --------- Parameters --------------------------------------
+# --------- Paths -------------------------------------------
 # -----------------------------------------------------------
 from database_archi import *
-
-# Amount of (gaussian) smoothing
-#SIGMA3D = ?
 
 # Path to the original image
 #orig_data_path = ?
 
 # Output path for the smoothed image
 #smoothed_data_path = ?
+
+# -----------------------------------------------------------
+# --------- Parameters  -------------------------------------
+# -----------------------------------------------------------
+
+# Amount of (gaussian) smoothing
+#SIGMA3D = ?
 
 # -----------------------------------------------------------
 # --------- Script starts -----------------------------------
