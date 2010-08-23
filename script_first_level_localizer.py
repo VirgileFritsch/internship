@@ -1,6 +1,5 @@
 """
-Script that perform the first-level analysis of a dataset of the FIAC
-Last updated by B.Thirion
+Script that perform the first-level analysis on a subject 4D fMRI acquisition.
 
 Author : Lise Favre, Bertrand Thirion, 2008-2010
 """
@@ -11,21 +10,29 @@ from numpy import arange
 from nipy.neurospin.utils.mask import compute_mask_files
 from nipy.neurospin.glm_files_layout import glm_tools, contrast_tools
 
+# -----------------------------------------------------------
+# --------- Paths ----------------------------
+# -----------------------------------------------------------
 from database_archi import *
 
-# -----------------------------------------------------------
-# --------- Set the paths -----------------------------------
-#-----------------------------------------------------------
-
+# Path to the subjects database
 DBPath = ROOT_PATH
+
+# Subjects list (to run the analysis over multiple subjects)
 Subjects = [SUBJECT]
+
+# Acquisition(s) and session(s) to run the script on
 Acquisitions = ["default_acquisition"]
 Sessions = ["loc2"]
+
+# Model's id (e.g. models with different amount of smoothing)
 model_id = "smoothed_FWHM%g" %FWHM3D
+
+# Name of the input nifti files to process
 fmri_wc = "swaloc_corr4D_FWHM%g.nii" %FWHM3D
 
 # ---------------------------------------------------------
-# -------- General Information ----------------------------
+# -------- General Information and parameters -------------
 # ---------------------------------------------------------
 
 tr = 2.4
@@ -35,11 +42,6 @@ frametimes = tr * arange(nb_frames)
 Conditions = [ 'damier_H', 'damier_V', 'clicDaudio', 'clicGaudio', 
 'clicDvideo', 'clicGvideo', 'calculaudio', 'calculvideo', 'phrasevideo', 
 'phraseaudio' ]
-
-
-# ---------------------------------------------------------
-# ------ First level analysis parameters ---------------------
-# ---------------------------------------------------------
 
 #---------- Masking parameters 
 infTh = 0.4
@@ -60,6 +62,9 @@ hfcut = 128
 fit_algo = "Kalman_AR1"
 
 
+# ---------------------------------------------------------
+# ------ Routines definition ------------------------------
+# ---------------------------------------------------------
 
 def generate_localizer_contrasts(contrast):
     """
@@ -74,6 +79,7 @@ def generate_localizer_contrasts(contrast):
     Caveat
     ------
     contrast is changed in place
+    
     """
     d = contrast.dic
     d["audio"] = d["clicDaudio"] + d["clicGaudio"] +\
@@ -92,10 +98,12 @@ def generate_localizer_contrasts(contrast):
     d["video-audio"] = d["video"] - d["audio"]
     d["computation-sentences"] = d["computation"] - d["sentences"]
     d["reading-visual"] = d["sentences"]*2 - d["damier_H"] - d["damier_V"]
-    
-#####################################################################
-# Launching Pipeline on all subjects, all acquisitions, all sessions
-#####################################################################
+
+
+# -----------------------------------------------------------
+# --------- Launching Pipeline on all subjects, -------------
+# --------- all acquisitions, all sessions      -------------
+# -----------------------------------------------------------
 
 # Treat sequentially all subjects & acquisitions
 for s in Subjects:
@@ -104,8 +112,8 @@ for s in Subjects:
     for a in Acquisitions:
         # step 1. set all the paths
         basePath = os.sep.join((DBPath, s, "fMRI", a))
-        paths = glm_tools.generate_all_brainvisa_paths( basePath, Sessions, 
-                                                        fmri_wc, model_id)  
+        paths = glm_tools.generate_all_brainvisa_paths(basePath, Sessions, 
+                                                       fmri_wc, model_id)  
           
         misc = ConfigObj(paths['misc'])
         misc["sessions"] = Sessions
@@ -124,17 +132,17 @@ for s in Subjects:
         # step 3. Compute the Mask
         # fixme : it should be possible to provide a pre-computed mask
         print "Computing the Mask"
-        mask_array = compute_mask_files( paths['fmri'].values()[0][0], 
-                                         paths['mask'], True, infTh, supTh)
+        mask_array = compute_mask_files(paths['fmri'].values()[0][0], 
+                                        paths['mask'], True, infTh, supTh)
         
         # step 4. Creating functional contrasts
         print "Creating Contrasts"
         clist = contrast_tools.ContrastList(misc=ConfigObj(paths['misc']),
-                                      model=model_id)
+                                            model=model_id)
         generate_localizer_contrasts(clist)
         contrast = clist.save_dic(paths['contrast_file'])
         CompletePaths = glm_tools.generate_brainvisa_ouput_paths( 
-                        paths["contrasts"],  contrast)
+                        paths["contrasts"], contrast)
 
         # step 5. Fit the  glm for each session
         glms = {}
@@ -148,6 +156,6 @@ for s in Subjects:
         #step 6. Compute Contrasts
         print "Computing contrasts"
         glm_tools.compute_contrasts(contrast, misc, CompletePaths,
-                                    glms,  model=model_id)
+                                    glms, model=model_id)
 
         
