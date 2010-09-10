@@ -100,33 +100,3 @@ for hemisphere in ['left','right']:
     # write the file
     output_tex.write()
 
-"""
-# -----------------------------------------------------------
-# --------- DEBUG -------------------------------------------
-# -----------------------------------------------------------
-
-max_neighbors_values = np.array([])
-for p in range(nb_vertices):
-    p_neighbors = np.concatenate(([p], edges[edges[:,0]==p, 1]), 1)
-    p_neighbors_values = smoothed_activation_data[0,:][p_neighbors]
-    p_max_neighbor = np.amin(p_neighbors_values)
-    max_neighbors_values = \
-            np.concatenate((max_neighbors_values,[p_max_neighbor]), 1)
-
-### Create a map showing the reluctant vertices
-diff = smoothed_activation_data[1,:] - max_neighbors_values
-diff[diff > 0] = 0
-
-# create a new texture object
-output_tex_err = aims.TimeTexture_FLOAT()
-# add data to the texture object
-tex_0 = output_tex_err[0]
-tex_0.reserve(nb_vertices)
-for i in np.arange(nb_vertices): tex_0.append(diff[i])
-
-# write the file
-W = aims.Writer()
-output_tex_err_path = output_tex_folder_path + 'lh.esaloc1_FWHM5_sbs_biased.tex'
-W.write(output_tex_err, output_tex_err_path)
-"""
-
