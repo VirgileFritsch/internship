@@ -4,6 +4,7 @@ Here the analysis is perfomed on the cortical of one hemisphere.
 
 
 Author : Lise Favre, Bertrand Thirion, 2008-2010
+
 """
 import os
 from configobj import ConfigObj
@@ -11,25 +12,34 @@ from numpy import arange
 
 from nipy.neurospin.glm_files_layout import glm_tools, contrast_tools, cortical_glm
 
+# -----------------------------------------------------------
+# --------- Paths -------------------------------------------
+# -----------------------------------------------------------
 from database_archi import *
 
-# -----------------------------------------------------------
-# --------- Set the paths -----------------------------------
-#-----------------------------------------------------------
-
+# Path to the subjects database
 DBPath = ROOT_PATH
+
+# Subjects list (to run the analysis over multiple subjects)
 Subjects = [SUBJECT]
+
+# Acquisition(s) and session(s) to run the script on
 Acquisitions = [""]
 Sessions = ["loc1"]
+
+# Model's id (e.g. models with different amount of smoothing)
+#FWHM = ?
 model_id = "smoothed_FWHM%g" %FWHM
+
+# Which hemisphere will be processed
 side = 'left'
 fmri_wc = "rh.saloc1_FWHM%g.tex" %FWHM
-if side=='left':
+if side == 'left':
     fmri_wc = "lh.saloc1_FWHM%g.tex" %FWHM
 
 
 # ---------------------------------------------------------
-# -------- General Information ----------------------------
+# -------- General information and parameters -------------
 # ---------------------------------------------------------
 
 tr = 2.4
@@ -39,11 +49,6 @@ frametimes = arange(nb_frames) * tr
 Conditions = [ 'damier_H', 'damier_V', 'clicDaudio', 'clicGaudio', 
 'clicDvideo', 'clicGvideo', 'calculaudio', 'calculvideo', 'phrasevideo', 
 'phraseaudio' ]
-
-
-# ---------------------------------------------------------
-# ------ First level analysis parameters ---------------------
-# ---------------------------------------------------------
 
 #---------- Masking parameters 
 infTh = 0.4
@@ -63,6 +68,10 @@ hfcut = 128
 # Possible choices : "Kalman_AR1", "Kalman", "Ordinary Least Squares"
 fit_algo = "Kalman_AR1"
 
+
+# ---------------------------------------------------------
+# ------ Routines definition ------------------------------
+# ---------------------------------------------------------
 
 def generate_localizer_contrasts(contrast):
     """
@@ -95,10 +104,12 @@ def generate_localizer_contrasts(contrast):
     d["video-audio"] = d["video"] - d["audio"]
     d["computation-sentences"] = d["computation"] - d["sentences"]
     d["reading-visual"] = d["sentences"]*2 - d["damier_H"] - d["damier_V"]
-    
-# ------------------------------------------------------------------
-# Launching Pipeline on all subjects, all acquisitions, all sessions 
-# -------------------------------------------------------------------
+
+
+# -----------------------------------------------------------
+# --------- Launching Pipeline on all subjects, -------------
+# --------- all acquisitions, all sessions      -------------
+# -----------------------------------------------------------
 
 # Treat sequentially all subjects & acquisitions
 for s in Subjects:

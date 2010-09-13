@@ -11,7 +11,7 @@ from nipy.neurospin.mask import compute_mask_files
 from nipy.neurospin.glm_files_layout import glm_tools, contrast_tools
 
 # -----------------------------------------------------------
-# --------- Paths ----------------------------
+# --------- Paths -------------------------------------------
 # -----------------------------------------------------------
 from database_archi import *
 
