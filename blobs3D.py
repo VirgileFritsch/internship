@@ -32,23 +32,23 @@ if SUBJECT == "group":
     # output directory
     BLOBS3D_DIR = "%s/blobs3D_%s" % (m_path, CONTRAST)
 
-# path to the data mask
+#----- Path to the data mask
 #brain_mask_path = ?
-# path to data to extract the blobs from
+#----- Path to data to extract the blobs from
 #glm_data_path = ?
 
-# output directory
+#----- Output directory
 swd = BLOBS3D_DIR
 if not os.path.exists(swd):
     os.makedirs(swd)
-# type of leaves (end-blobs) to write :
+#----- Type of leaves (end-blobs) to write :
 # - "blobs": index-labelled blobs
 # - "mblobs": mean-labelled blobs
 #BLOB3D_TYPE = ?
 
-# blob-forming threshold (min significant intensity value)
+#----- Blob-forming threshold (min significant intensity value)
 #THETA3D = ?
-# size threshold on blobs
+#----- Size threshold on blobs
 #SMIN3D = ?
 
 # -----------------------------------------------------------

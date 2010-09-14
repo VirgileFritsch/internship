@@ -17,21 +17,21 @@ from nipy.neurospin.glm_files_layout import glm_tools, contrast_tools, cortical_
 # -----------------------------------------------------------
 from database_archi import *
 
-# Path to the subjects database
+#----- Path to the subjects database
 DBPath = ROOT_PATH
 
-# Subjects list (to run the analysis over multiple subjects)
+#----- Subjects list (to run the analysis over multiple subjects)
 Subjects = [SUBJECT]
 
-# Acquisition(s) and session(s) to run the script on
+#----- Acquisition(s) and session(s) to run the script on
 Acquisitions = [""]
 Sessions = ["loc1"]
 
-# Model's id (e.g. models with different amount of smoothing)
+#----- Model's id (e.g. models with different amount of smoothing)
 #FWHM = ?
 model_id = "smoothed_FWHM%g" %FWHM
 
-# Which hemisphere will be processed
+#----- Which hemisphere will be processed
 side = 'left'
 fmri_wc = "rh.saloc1_FWHM%g.tex" %FWHM
 if side == 'left':

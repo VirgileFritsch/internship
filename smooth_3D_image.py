@@ -13,17 +13,17 @@ from nipy.io.imageformats import load, Nifti1Image, save
 # -----------------------------------------------------------
 from database_archi import *
 
-# Path to the original image
+#----- Path to the original image
 #orig_data_path = ?
 
-# Output path for the smoothed image
+#----- Output path for the smoothed image
 #smoothed_data_path = ?
 
 # -----------------------------------------------------------
 # --------- Parameters  -------------------------------------
 # -----------------------------------------------------------
 
-# Amount of (gaussian) smoothing
+#----- Amount of (gaussian) smoothing
 #SIGMA3D = ?
 
 # -----------------------------------------------------------

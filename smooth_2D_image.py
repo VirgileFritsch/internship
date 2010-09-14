@@ -22,24 +22,23 @@ from gifti import loadImage
 # -----------------------------------------------------------
 from database_archi import *
 
-# Path to the meshes
+#----- Path to the meshes
 #rmesh_path_gii = ?
 #lmesh_path_gii = ?
 
-# Path to the original textures
+#----- Path to the original textures
 #orig_rtex_path = ?
 #orig_ltex_path = ?
 
-# Output path for the smoothed images
+#----- Output path for the smoothed images
 #smoothed_rtex_path = ?
 #smoothed_ltex_path = ?
-
 
 # -----------------------------------------------------------
 # --------- Parameters  -------------------------------------
 # -----------------------------------------------------------
 
-# Amount of (gaussian) smoothing
+#----- Amount of (gaussian) smoothing
 #FWHM = ?
 
 # -----------------------------------------------------------

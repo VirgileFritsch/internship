@@ -15,20 +15,20 @@ from nipy.neurospin.glm_files_layout import glm_tools, contrast_tools
 # -----------------------------------------------------------
 from database_archi import *
 
-# Path to the subjects database
+#----- Path to the subjects database
 DBPath = ROOT_PATH
 
-# Subjects list (to run the analysis over multiple subjects)
+#----- Subjects list (to run the analysis over multiple subjects)
 Subjects = [SUBJECT]
 
-# Acquisition(s) and session(s) to run the script on
+#----- Acquisition(s) and session(s) to run the script on
 Acquisitions = ["default_acquisition"]
 Sessions = ["loc2"]
 
-# Model's id (e.g. models with different amount of smoothing)
+#----- Model's id (e.g. models with different amount of smoothing)
 model_id = "smoothed_FWHM%g" %FWHM3D
 
-# Name of the input nifti files to process
+#----- Name of the input nifti files to process
 fmri_wc = "swaloc_corr4D_FWHM%g.nii" %FWHM3D
 
 # ---------------------------------------------------------
