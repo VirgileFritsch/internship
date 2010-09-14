@@ -67,7 +67,7 @@ nroi = hroi.HROI_as_discrete_domain_blobs(domain, glm_data.ravel(),
                                           threshold=THETA3D, smin=SMIN3D)
 
 #------------------------------------------------------------
-### Extract blobs maps as textures
+### Extract blobs maps as data arrays
 blobs_labels = -np.zeros(nroi.domain.size)
 blobs_means = -np.zeros(nroi.domain.size)
 if nroi != None:
@@ -96,7 +96,7 @@ print "Wrote the blobs average signal image in %s" \
       %os.path.join(swd, "bmap.nii")
 
 #------------------------------------------------------------
-### Extract end-blobs (or leaves) maps as textures
+### Extract end-blobs (or leaves) maps as data arrays
 leaves_labels = -np.zeros(nroi.domain.size)
 leaves_means = -np.zeros(nroi.domain.size)
 if nroi != None:
