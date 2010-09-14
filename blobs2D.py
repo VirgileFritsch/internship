@@ -1,12 +1,17 @@
 """
-Script to create (end-)blobs on a texture 
+This scipt extracts the blobs from a 2D texture.
+
+This creates as output two textures with the terminal blobs only
+(activation means and labels).
+
+Author : Virgile Fritsch, 2010,
+         adapted from original Bertrand Thirion's script, 2009
+         
 """
 
 import os, sys
 import numpy as np
 
-import nipy.neurospin.graph.field as ff
-import nipy.neurospin.graph.graph as fg
 from nipy.neurospin.spatial_models import hroi
 from nipy.neurospin.glm_files_layout import tio
 from nipy.neurospin.spatial_models.discrete_domain import domain_from_mesh
@@ -42,7 +47,8 @@ from database_archi import *
 #-------------------------------------------------
 #--- Right hemisphere processing -----------------
 #-------------------------------------------------
-print "Processing right hemisphere.",
+print "Processing right hemisphere."
+sys.stdout.flush()
 # Compute the nested roi object
 domain = domain_from_mesh(rmesh_path_gii)
 # Get initial texture (from which to create the blobs)
@@ -75,7 +81,8 @@ output_tex.write()
 #-------------------------------------------------
 #--- Left hemisphere processing ------------------
 #-------------------------------------------------
-print "Processing left hemisphere.",
+print "Processing left hemisphere."
+sys.stdout.flush()
 # Compute the nested roi object
 domain = domain_from_mesh(lmesh_path_gii)
 # Get initial texture (from which to create the blobs)

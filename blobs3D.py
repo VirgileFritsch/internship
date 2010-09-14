@@ -1,13 +1,14 @@
 """
 This scipt extracts the blobs from a 3D nifti image
 
-This create as output
+This creates as output
 - a label image representing the nested blobs,
 - an image of the averge signal per blob and
-- an image with the terminal blob only
+- two images with the terminal blobs only (activation means and labels)
 
 Author : Virgile Fritsch, 2010,
          adapted from original Bertrand Thirion's script, 2009
+         
 """
 
 import os
