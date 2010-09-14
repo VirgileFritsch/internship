@@ -41,10 +41,6 @@ if SUBJECT == "group":
 swd = BLOBS3D_DIR
 if not os.path.exists(swd):
     os.makedirs(swd)
-#----- Type of leaves (end-blobs) to write :
-# - "blobs": index-labelled blobs
-# - "mblobs": mean-labelled blobs
-#BLOB3D_TYPE = ?
 
 #----- Blob-forming threshold (min significant intensity value)
 #THETA3D = ?
