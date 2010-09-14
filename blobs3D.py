@@ -68,8 +68,8 @@ nroi = hroi.HROI_as_discrete_domain_blobs(domain, glm_data.ravel(),
 
 #------------------------------------------------------------
 ### Extract blobs maps as data arrays
-blobs_labels = -np.zeros(nroi.domain.size)
-blobs_means = -np.zeros(nroi.domain.size)
+blobs_labels = -np.zeros(domain.size)
+blobs_means = -np.zeros(domain.size)
 if nroi != None:
     nroi.make_feature('activation', glm_data.ravel())
     bfm = nroi.representative_feature('activation')
@@ -97,8 +97,8 @@ print "Wrote the blobs average signal image in %s" \
 
 #------------------------------------------------------------
 ### Extract end-blobs (or leaves) maps as data arrays
-leaves_labels = -np.zeros(nroi.domain.size)
-leaves_means = -np.zeros(nroi.domain.size)
+leaves_labels = -np.zeros(domain.size)
+leaves_means = -np.zeros(domain.size)
 if nroi != None:
     lroi = nroi.reduce_to_leaves()
     bfm = lroi.representative_feature('activation')
