@@ -233,7 +233,7 @@ class Blob3D(Blob):
         
         """
         if self.is_leaf():
-            del  Blob3D.leaves[self.id]
+            del Blob3D.leaves[self.id]
         if not self.is_node():
             Blob3D.nodes[self.id] = self
 
@@ -261,8 +261,8 @@ class Blob3D(Blob):
                 yvalues = 0.
                 ycoeffs = 0.
                 for linked_blob in Blob2D.leaves.values():
-                    if (linked_blob.associated_3D_blob == self \
-                        or self in linked_blob.potentialy_associated):
+                    if (linked_blob.associated_3D_blob == self) or \
+                       (self in linked_blob.potentialy_associated):
                         link =  linked_blob.association_probas
                         coeff = link[link[:,0]==self.id,1]
                         ycoeffs += coeff
