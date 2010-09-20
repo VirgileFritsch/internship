@@ -42,7 +42,6 @@ if SHOW_MATCHING:
 
 if SHOW_OUTPUTS:
     import enthought.mayavi.mlab as mayavi
-    from enthought.tvtk.api import tvtk
 
 from blob import Blob2D, Blob3D
 
