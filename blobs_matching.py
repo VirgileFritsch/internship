@@ -14,24 +14,19 @@ Authors: Virgile Fritsch and Bertrand Thirion, 2010
 
 """
 
-SHOW_MATCHING = True
+SHOW_MATCHING = False
 SHOW_HIERARCHY = False
-SHOW_OUTPUTS = True
+SHOW_OUTPUTS = False
 
 import sys, copy, os
 import numpy as np
 import scipy as sp
-from scipy import ndimage
 from nipy.neurospin.glm_files_layout import tio
 from nipy.io.imageformats import load
-from nipy.neurospin.spatial_models.roi import DiscreteROI, MultipleROI
+import nipy.neurospin.spatial_models.bayesian_structural_analysis as bsa
 from nipy.neurospin.viz_tools.maps_3d import affine_img_src
-import nipy.neurospin.graph.field as ff
-import nipy.neurospin.graph.graph as fg
-import nipy.neurospin.clustering.clustering as cl
 from nipy.neurospin.spatial_models import hroi
 from gifti import loadImage
-from scikits.learn import ball_tree
 from nipy.neurospin.spatial_models.discrete_domain import domain_from_mesh
 from nipy.neurospin.spatial_models.discrete_domain import domain_from_image
 
@@ -77,7 +72,7 @@ threshold_maybe = 2.5e-1
 DEBUG = True
 
 # write textures ?
-WRITE = False
+WRITE = True
 
 # special case when matching blobs of group analysis results
 if SUBJECT == "group":
@@ -320,11 +315,18 @@ def load_hemisphere_data(mesh_path_gii, tex_path, hemisphere):
     domain = domain_from_mesh(mesh_path_gii)
     nroi = hroi.HROI_as_discrete_domain_blobs(
         domain, tex, threshold=THETA, smin=SMIN)
-    if nroi:
+    if nroi.k > 0:
+        # get probability that blobs are true positives
+        #are_leaves = nroi.isleaf()
+        #leaves_id = np.where(are_leaves == True)[0]
+        bfm = nroi.representative_feature('signal', 'weighted mean')
+        learn = np.squeeze(tex[tex!=0])
+        bf0 = bsa.signal_to_pproba(bfm, learn, 'gauss_mixture')
         for i in np.arange(nroi.k):
             vertices_id = np.where(nroi.label == i)[0]
             new_blob = Blob2D(vertices[vertices_id], vertices_id,
                               tex[vertices_id], hemisphere)
+            new_blob.gf = bf0[i]
         # update associations between blobs
         parents = nroi.get_parents()
         for c, p in enumerate(parents):
@@ -335,6 +337,7 @@ def load_hemisphere_data(mesh_path_gii, tex_path, hemisphere):
         
         leaves = nroi.reduce_to_leaves()
         for k in range(leaves.k):
+            Blob2D.leaves.values()
             blobs2D_tex[leaves.label == k] =  k + old_nb_blobs
 
     return vertices, triangles, blobs2D_tex
@@ -352,6 +355,25 @@ lvertices, ltriangles, blobs2D_ltex = load_hemisphere_data(
 rvertices, rtriangles, blobs2D_rtex = load_hemisphere_data(
     rmesh_path_gii, glm_rtex_path, "right")
 
+### Coordinates former results
+rtex_fcoord = -np.ones(blobs2D_rtex.size)
+ltex_fcoord = -np.ones(blobs2D_ltex.size)
+for b in Blob2D.leaves.values():
+    if b.hemisphere == "right":
+        rtex_fcoord[b.vertices_id[b.get_argmax_activation()]] = b.gf
+    else:
+        ltex_fcoord[b.vertices_id[b.get_argmax_activation()]] = b.gf
+# write results
+out_dir = "%s_level%03d" %(OUTPUT_FCOORD_DIR, 1)
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+output_fcoord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_fcoord_output), data=rtex_fcoord)
+if WRITE:
+    output_fcoord_rtex.write()
+output_fcoord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_fcoord_output), data=ltex_fcoord)
+if WRITE:
+    output_fcoord_ltex.write()
+
 ### Get 3D blobs hierarchy
 # get data domain (~ data mask)
 mask = load(brain_mask_path)
@@ -366,19 +388,33 @@ nroi3D = hroi.HROI_as_discrete_domain_blobs(
     domain3D, glm_data.ravel(), threshold=THETA3D, smin=SMIN3D)
 # create the right number of blobs
 Blob3D(None, None, None)  # 3D blob with id=0
-if nroi3D:
+if nroi3D.k > 0:
+    # get probability that blobs are true positives
+    are_leaves = nroi3D.isleaf()
+    leaves_id = np.where(are_leaves == True)[0]
+    bfm = nroi3D.representative_feature('signal', 'weighted mean')
+    bfm = bfm[nroi3D.isleaf()]
+    learn = np.squeeze(glm_data.ravel()[glm_data.ravel()!=0])
+    bf0 = bsa.signal_to_pproba(bfm, learn, 'gauss_mixture')
+    
     blobs3D_pos = nroi3D.domain.get_coord()
     for i in np.arange(nroi3D.k):
-        vertices_id = np.where(nroi3D.label == i)[0]
-        vertices = blobs3D_pos[vertices_id]
-        Blob3D(vertices, vertices_id, nroi3D.get_feature('signal')[i])
+        if are_leaves[i]:
+            vertices_id = np.where(nroi3D.label == i)[0]
+            vertices = blobs3D_pos[vertices_id]
+            new_blob = Blob3D(vertices, vertices_id,
+                              nroi3D.get_feature('signal')[i])
+            new_blob.gf = bf0[are_leaves.cumsum()[i]-1]
     # update associations between blobs
+    """
+    #useless since we don't care about the 3D blobs hierarchical structure
     parents = nroi3D.get_parents()
     for c, p in enumerate(parents):
         b = Blob3D.all_blobs[c+1]
         parent = Blob3D.all_blobs[p+1]
         if parent.id != b.id:  # avoid recursive parenthood
             b.set_parent(parent)
+    """
 
 ### Plot the 3D blobs
 if blobs3D_to_show[0] == -3:
@@ -392,7 +428,7 @@ if SHOW_OUTPUTS:
         blob_center = Blob3D.all_blobs[k].compute_center()
         mayavi.points3d(blob_center[0], blob_center[1], blob_center[2],
                         scale_factor=1)
-        label_image_data[nroi3D.label == k-1] = 2*k
+        label_image_data[nroi3D.label == leaves_id[k-1]] = 2*k
     # define data used for texturing
     label_image = np.zeros(volume_image_shape)
     label_image[mask_data != 0] = label_image_data
@@ -472,8 +508,9 @@ proba[np.isnan(proba)] = 0.
 proba_bckup = proba.copy()
 
 ### Post-processing the results
-plot_matching_results(proba, dist_display, GAMMA, SIGMA,
-                      './results/ver0/res.txt', blobs2D_list, blobs3D_list)
+plot_matching_results(
+    proba, dist_display, GAMMA, SIGMA, './results/ver0/res.txt',
+    blobs2D_list, blobs3D_list)
 
 blobs2D_list_bckup = copy.deepcopy(blobs2D_list)
 
@@ -562,7 +599,7 @@ for b in Blob2D.leaves.values():
 
 # consolidate regions composition by finding possible artefacts
 for r in region.keys():
-    print "--- Analysis of region %d" %r
+    #print "--- Analysis of region %d" %r
     sum_probas_region = 0.
     for blob in region[r]:
         b = Blob2D.leaves[blob]
@@ -574,10 +611,10 @@ for r in region.keys():
         b = Blob2D.leaves[blob]
         row = np.where(b.regions_probas[:,0] == r)[0]
         b.regions_probas[row,1] /= sum_probas_region
-        print "Blob %d, %g/%g, %g -> %g" %(b.id, b.vertices_id.size, \
-                                           region_size[r], \
-                                           b.association_probas[row,1], \
-                                           b.regions_probas[row,1]*100)
+        #print "Blob %d, %g/%g, %g -> %g" %(b.id, b.vertices_id.size, \
+        #                                   region_size[r], \
+        #                                   b.association_probas[row,1], \
+        #                                   b.regions_probas[row,1]*100)
 
 #-----------------------------------------
 #- DISPLAY THE FIRST RESULTS
@@ -659,6 +696,15 @@ if SHOW_MATCHING:
             blob2D.display(ax, circle_color='green')
     
     if SHOW_HIERARCHY:
+        """
+        # We don't show the 3D blobs structure since:
+        # - it's useless
+        # - we didn't store it to have a continuous set of leaves labels
+        # - plot is ugly
+        #
+        # Maybe one day we will need to plot the entire hierarchy. In this
+        # case, we may need to rethink the blobs implementation.
+        #
         # display 3D blobs hierarchy
         for blob3D in Blob3D.nodes.values():
             blob3D.display(ax)
@@ -668,6 +714,7 @@ if SHOW_MATCHING:
                             blob3D.get_xpos()-Blob3D.radius/2.],
                             [child.get_ypos(),blob3D.get_ypos()],
                             color='black')
+        """
         
         # display 2D blobs hierarchy
         for blob2D in Blob2D.nodes.values():
@@ -718,127 +765,33 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_ltex = tio.Texture("%s/%s" %(out_dir,lresults_output), data=ltex)
     if WRITE:
         output_ltex.write()
-    
-    ### Output textures with entire domain
-    # fill the entire blob domain
-    ltex_entire = ltex.copy()
-    rtex_entire = rtex.copy()
-    for b in Blob2D.nodes.values():
-        if b.hemisphere == "left":
-            the_tex = ltex_entire
-        else:
-            the_tex = rtex_entire
-        for i in b.vertices_id:
-            if the_tex[i] == -1:
-                the_tex[i] = -0.7
-    # write results
-    out_dir = "%s_level%03d" %(OUTPUT_ENTIRE_DOMAIN_DIR, 1)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    output_entire_domain_rtex = tio.Texture("%s/%s" %(out_dir,rresults_entire_domain_output), data=rtex_entire)
-    if WRITE:
-        output_entire_domain_rtex.write()
-    output_entire_domain_ltex = tio.Texture("%s/%s" %(out_dir,lresults_entire_domain_output), data=ltex_entire)
-    if WRITE:
-        output_entire_domain_ltex.write()
-    
-    ### Auxiliary results large domain
-    all_rvertices = np.array([[],[],[]], ndmin=2).T
-    all_lvertices = np.array([[],[],[]], ndmin=2).T
-    all_rvertices_id = np.array([], dtype=int)
-    all_lvertices_id = np.array([], dtype=int)
-    for b in Blob2D.all_blobs.values():
-        if b.hemisphere == "right":
-            all_rvertices = np.concatenate((all_rvertices, b.vertices))
-            all_rvertices_id = np.concatenate((all_rvertices_id, b.vertices_id))
-        else:
-            all_lvertices = np.concatenate((all_lvertices, b.vertices))
-            all_lvertices_id = np.concatenate((all_lvertices_id, b.vertices_id))
-    # right hemisphere cluster
-    rtex_aux_large = -np.ones(rtex.shape[0])
-    if len(rindex) != 0:
-        rassignment = cl.voronoi(all_rvertices, max_pos[rindex])
-        rtex_aux_large[all_rvertices_id] = rassignment
-    # left hemisphere cluster
-    ltex_aux_large = -np.ones(ltex.shape[0])
-    if len(lindex) != 0:
-        lassignment = cl.voronoi(all_lvertices, max_pos[lindex])
-        ltex_aux_large[all_lvertices_id] = lassignment
-    # write results
-    out_dir = "%s_level%03d" %(OUTPUT_LARGE_AUX_DIR, 1)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    output_aux_large_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_large_output), data=rtex_aux_large)
-    if WRITE:
-        output_aux_large_rtex.write()
-    output_aux_large_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_large_output), data=ltex_aux_large)
-    if WRITE:
-        output_aux_large_ltex.write()
-    
-    ### Auxiliary results restricted domain
-    # right hemisphere cluster
-    all_rblobs_vertices = rvertices[rtex != -1]
-    rtex_aux = -np.ones(rtex.shape[0])
-    if len(rindex) != 0:
-        rassignment = cl.voronoi(all_rblobs_vertices, max_pos[rindex])
-        rtex_aux[rtex != -1] = rassignment
-    # left hemisphere cluster
-    all_lblobs_vertices = lvertices[ltex != -1]
-    ltex_aux = -np.ones(ltex.shape[0])
-    if len(lindex) != 0:
-        lassignment = cl.voronoi(all_lblobs_vertices, max_pos[lindex])
-        ltex_aux[ltex != -1] = lassignment
-    # write results
-    out_dir = "%s_level%03d" %(OUTPUT_AUX_DIR, 1)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    output_aux_rtex = tio.Texture("%s/%s" %(out_dir,rresults_aux_output), data=rtex_aux)
-    if WRITE:
-        output_aux_rtex.write()
-    output_aux_ltex = tio.Texture("%s/%s" %(out_dir,lresults_aux_output), data=ltex_aux)
-    if WRITE:
-        output_aux_ltex.write()
 
     ### Coordinates results
     rtex_coord = -np.ones(rtex.size)
     ltex_coord = -np.ones(ltex.size)
-    max_region = {}
-    max_region_location = {}
-    max_region_hemisphere = {}
+    for r in region.keys():
+        max_region_location = -1
+        max_region = -1
+        max_region_hemisphere = ""
+        for blob in region[r]:
+            b = Blob2D.leaves[blob]
+            row = np.where(b.regions_probas[:,0] == r)[0]
+            if b.regions_probas[row,1] > max_region:
+                max_region = b.regions_probas[row,1]/100.
+                max_region_hemisphere = b.hemisphere
+                max_region_location = b.vertices_id[b.get_argmax_activation()]
+                max_region_value = b.gf
+        if max_region_hemisphere == "right":
+            rtex_coord[max_region_location] = max_region_value
+        else:
+            ltex_coord[max_region_location] = max_region_value
     for b in Blob2D.leaves.values():
-        if b.associated_3D_blob is not None and \
-           b.associated_3D_blob.id != 0:
-            if b.associated_3D_blob.id in max_region.keys():
-                if max_region[b.associated_3D_blob.id] < b.get_argmax_activation():
-                    max_region[b.associated_3D_blob.id] = \
-                                b.get_argmax_activation()
-                    max_region_location[b.associated_3D_blob.id] = \
-                                b.vertices_id[b.get_argmax_activation()]
-                    max_region_hemisphere[b.associated_3D_blob.id] = \
-                                b.hemisphere
-            else:
-                max_region[b.associated_3D_blob.id] = \
-                                b.get_argmax_activation()
-                max_region_location[b.associated_3D_blob.id] = \
-                                b.vertices_id[b.get_argmax_activation()]
-                max_region_hemisphere[b.associated_3D_blob.id] = \
-                                b.hemisphere
-        else:
+        if b.associated_3D_blob is not None and b.associated_3D_blob.id == 0:
+            row = np.where(b.association_probas[:,0] == -1)[0]
             if b.hemisphere == "right":
-                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
-                #rtex_coord[b.vertices_id[b.get_argmax_activation()]] = \
-                #                    b.vertices_id[b.get_argmax_activation()]
+                rtex_coord[b.vertices_id[b.get_argmax_activation()]] = b.gf
             else:
-                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = 10.
-                #ltex_coord[b.vertices_id[b.get_argmax_activation()]] = \
-                #                    b.vertices_id[b.get_argmax_activation()]
-    for r in max_region.keys():
-        if max_region_hemisphere[r] == "right":
-            rtex_coord[max_region_location[r]] = 10.
-            #rtex_coord[max_region_location[r]] = max_region_location[r]
-        else:
-            ltex_coord[max_region_location[r]] = 10.
-            #ltex_coord[max_region_location[r]] = max_region_location[r]
+                ltex_coord[b.vertices_id[b.get_argmax_activation()]] = b.gf
     # write results
     out_dir = "%s_level%03d" %(OUTPUT_COORD_DIR, 1)
     if not os.path.exists(out_dir):
@@ -849,45 +802,14 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
     if WRITE:
         output_coord_ltex.write()
+        
 
-    ### Coordinates former results
-    rtex_fcoord = -np.ones(rtex.size)
-    ltex_fcoord = -np.ones(ltex.size)
-    for b in Blob2D.leaves.values():
-        if b.hemisphere == "right":
-            rtex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
-            #rtex_fcoord[b.vertices_id[b.get_argmax_activation()]] = \
-            #                        b.vertices_id[b.get_argmax_activation()]
-        else:
-            ltex_fcoord[b.vertices_id[b.get_argmax_activation()]] = 10.
-            #ltex_fcoord[b.vertices_id[b.get_argmax_activation()]] = \
-            #                        b.vertices_id[b.get_argmax_activation()]
-    # write results
-    out_dir = "%s_level%03d" %(OUTPUT_FCOORD_DIR, 1)
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    output_fcoord_rtex = tio.Texture("%s/%s" %(out_dir,rresults_fcoord_output), data=rtex_fcoord)
-    if WRITE:
-        output_fcoord_rtex.write()
-    output_fcoord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_fcoord_output), data=ltex_fcoord)
-    if WRITE:
-        output_fcoord_ltex.write()
-
-    if mayavi_outtex_type == "aux":
-        mayavi_routtex = rtex_aux_large
-        mayavi_louttex = ltex_aux
-    elif mayavi_outtex_type == "aux_large":
-        mayavi_routtex = rtex_aux_large
-        mayavi_louttex = ltex_aux_large
-    elif mayavi_outtex_type == "coord":
+    if mayavi_outtex_type == "coord":
         mayavi_routtex = rtex_coord
         mayavi_louttex = ltex_coord
     elif mayavi_outtex_type == "fcoord":
         mayavi_routtex = rtex_fcoord
         mayavi_louttex = ltex_fcoord
-    elif mayavi_outtex_type == "entire":
-        mayavi_routtex = rtex_entire
-        mayavi_louttex = ltex_entire
     else:
         mayavi_routtex = rtex
         mayavi_louttex = ltex
