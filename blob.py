@@ -488,7 +488,7 @@ class Blob2D(Blob):
             self.vertices = np.vstack((self.vertices, child.vertices))
             self.vertices_id = np.hstack((self.vertices_id, child.vertices_id))
             self.activation = np.concatenate((self.activation,
-                                              child.activation))
+                                              child.activation))        
             del Blob2D.leaves[child.id]
         else:
             print "Warning, not a child of this 2D blob."
