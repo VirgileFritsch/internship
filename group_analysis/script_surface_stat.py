@@ -18,8 +18,8 @@ import mixed_effects_stat as mes
 import mesh_processing as mep 
 from stat_calibration import *
 
-from soma import aims
 from nipy.neurospin.glm_files_layout import tio
+from gifti import loadImage
 
 ################################################################
 # User Parameters
@@ -41,31 +41,70 @@ subj = ['s12069', 's12300', 's12401', 's12431', 's12508', 's12532', 's12539', 's
 nsubj = len(subj)
 
 # paths to mesh
-db_path = '/data/home/virgile/virgile_internship'
-left_meshes = [op.join(db_path,"%s/surf/lh.r.aims.white.mesh") %s for s in subj]
-right_meshes = [op.join(db_path,"%s/surf/rh.r.aims.white.mesh") %s for s in subj]
+db_path = '/volatile/subjects_database'
+left_meshes = [op.join(db_path,"%s/surf/lh.r.white.normalized.gii") %s for s in subj]
+right_meshes = [op.join(db_path,"%s/surf/rh.r.white.normalized.gii") %s for s in subj]
 
 # output path
 if b_smooth:
     threshold_path = 'surface_threshold_smooth.con'
     # output dir
-    swd = '/data/home/virgile/virgile_internship/group_analysis/smoothed_FWHM5'
+    swd = '/volatile/subjects_database/group_analysis/smoothed_FWHM5'
 else:
     threshold_path = 'surface_threshold.con'
     # output dir
-    swd = '/data/home/virgile/virgile_internship/group_analysis/smoothed_FWHM0'
+    swd = '/volatile/subjects_database/group_analysis/smoothed_FWHM0'
 
+def mesh_to_graph(vertices, poly):
+    """
+    This function builds an fff graph from a mesh
+    (Taken from nipy mesh_processing.py but removed the aims dependancy)
+    """
+    V = len(vertices)
+    E = poly.shape[0]
+    edges = np.zeros((3*E,2))
+    weights = np.zeros(3*E)
+
+    for i in range(E):
+        sa = poly[i,0]
+        sb = poly[i,1]
+        sc = poly[i,2]
+        
+        edges[3*i] = np.array([sa,sb])
+        edges[3*i+1] = np.array([sa,sc])
+        edges[3*i+2] = np.array([sb,sc])    
+            
+    G = fg.WeightedGraph(V, edges, weights)
+
+    # symmeterize the graph
+    G.symmeterize()
+
+    # remove redundant edges
+    G.cut_redundancies()
+
+    # make it a metric graph
+    G.set_euclidian(vertices)
+
+    return G
 
 ################################################################
 # Create a topological model from the mesh
 ################################################################
 # buils graph from meshes
-R = aims.Reader()
-left_mesh = R.read(left_meshes[0])
-lg = mep.mesh_to_graph(left_mesh)
-right_mesh = R.read(right_meshes[0])
-rg = mep.mesh_to_graph(right_mesh)
-gg = fg.concatenate_graphs(lg,rg)
+# left hemisphere
+left_mesh = loadImage(left_meshes[0])
+c, n, t = left_mesh.getArrays()
+ltriangles = t.getData()
+lvertices = c.getData()
+lg = mesh_to_graph(lvertices, ltriangles)
+# right hemisphere
+right_mesh = loadImage(right_meshes[0])
+c, n, t = right_mesh.getArrays()
+rtriangles = t.getData()
+rvertices = c.getData()
+rg = mesh_to_graph(rvertices, rtriangles)
+
+gg = fg.concatenate_graphs(lg, rg)
 
 area = np.ones(gg.V)
 if b_cached==True:
@@ -73,8 +112,12 @@ if b_cached==True:
 elif b_cached==False:
     area = np.zeros(gg.V)
     for s in range(nsubj):
-        area[:lg.V] += mep.node_area(R.read(left_meshes[s]))
-        area[lg.V:] += mep.node_area(R.read(right_meshes[s]))
+        lmesh = loadImage(left_meshes[s])
+        c, n, t = lmesh.getArrays()
+        area[:lg.V] += mep.node_area(c.getData(), t.getData())
+        rmesh = loadImage(right_meshes[s])
+        c, n, t = rmesh.getArrays()
+        area[lg.V:] += mep.node_area(c.getData(), t.getData())
     area /= nsubj
     area.dump('area.npz')
 
@@ -85,7 +128,7 @@ ijk = np.reshape(np.arange(gg.V), (gg.V, 1))
 # Load the effects and variance
 ################################################################
 # list of contrasts
-contrast = ['audio-video']
+contrast = ['audio-video', 'reading-visual', 'left-right', 'right-left', 'computation-sentences']
 contrast_id = contrast
 
 def load_textures(left_con_tex, right_con_tex, left_var_tex, right_var_tex):
