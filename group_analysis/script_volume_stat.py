@@ -19,7 +19,7 @@ import mixed_effects_stat as mes
 
 subj = ['s12069', 's12300', 's12401', 's12431', 's12508', 's12532', 's12539', 's12562','s12590', 's12635', 's12636', 's12898', 's12081', 's12165', 's12207', 's12344', 's12352', 's12370', 's12381', 's12405', 's12414', 's12432']
 nsubj = len(subj)
-db_path = '/volatile/subjects_database'
+db_path = '/data/home/virgile/virgile_internship'
 mask_images = [op.join(db_path,"%s/fMRI/default_acquisition/Minf/mask.nii") % s for s in subj]
 
 # create the mask
@@ -31,15 +31,15 @@ ijk = np.array(np.where(mask)).T
 nvox = np.sum(mask)
 
 # output dir
-b_smooth = False
+b_smooth = True
 if b_smooth:
     print "smoothed data"
     threshold_path = 'volume_threshold_smooth.con'
-    swd = '/volatile/subjects_database/group_analysis/smoothed_FWHM5'
+    swd = '/data/home/virgile/virgile_internship/group_analysis/smoothed_FWHM5'
 else:
     print "unsmoothed data"
     threshold_path = 'volume_threshold.con'
-    swd = '/volatile/subjects_database/group_analysis/smoothed_FWHM0'
+    swd = '/data/home/virgile/virgile_internship/group_analysis/smoothed_FWHM0'
 
 save(grp_mask, op.join(swd,'grp_mask.nii'))
 
@@ -69,8 +69,9 @@ def load_images(con_images, var_images):
     VarFunctional = np.maximum(VarFunctional, tiny)
     return Functional,  VarFunctional
 
-contrast = ['audio-video', 'reading-visual', 'left-right', 'right-left', 'computation-sentences']
-#contrast = ['audio-video']
+#contrast = ['reading-visual', 'left-right', 'right-left', 'audio-video',
+#            'computation-sentences']
+contrast = ['audio-video']
 contrast_id = contrast
 
 ##########################################################################
