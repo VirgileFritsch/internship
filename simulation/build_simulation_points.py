@@ -11,7 +11,6 @@ SHOW_SIMUL = True
 
 import sys, os
 import numpy as np
-import pdb
 
 from nipy.neurospin.glm_files_layout import tio
 from nipy.io.imageformats import load, Nifti1Image, save
@@ -19,7 +18,6 @@ import nipy.neurospin.graph.field as ff
 import nipy.neurospin.graph.graph as fg
 from nipy.neurospin.viz_tools.maps_3d import affine_img_src
 from scikits.learn import ball_tree
-#from scikits.learn import ball_tree
 from gifti import loadImage
 
 if SHOW_SIMUL:
@@ -47,20 +45,37 @@ simul_3D_path = '%s/simul_3D.nii' %(simul_path)
 simul_2D_rtex_path = '%s/simul_2D_right.tex' %(simul_path)
 simul_2D_ltex_path = '%s/simul_2D_left.tex' %(simul_path)
 
+# -----------------------------------------------------------
+# --------- Parameters --------------------------------------
+# -----------------------------------------------------------
 
-artifact_id = 36817
+#----- Vertices id corresponding to the artifacts reference locations
+artifact_id = 7458
+artifact2_id = 36817
+
+#----- Variability on main activations locations
 sigma = 5.
+#----- Variability on artifacts locations
 sigma_artifact = 5.
-mu_blob_wideness = 12.
-sigma_blob_wideness = 4.
-mu_artifact_wideness = mu_blob_wideness / 5.
-sigma_artifact_wideness = mu_artifact_wideness / 3.
+
+#----- Create wide blobs (i.e. not a unique point)
+LARGE_BLOBS = True
+
+if LARGE_BLOBS:
+    #----- Mean and std deviation of main activations sizes
+    mu_blob_wideness = 12.
+    sigma_blob_wideness = 4.
+    #----- Mean and std deviation of artifacts sizes
+    mu_artifact_wideness = mu_blob_wideness / 5.
+    sigma_artifact_wideness = mu_artifact_wideness / 3.
 
 if SHOW_SIMUL:
+#----- Texture for mayavi visualization, can be:
+# - "ref", to see main activation and artifacts locations
+# - "f1", "f2", ... , "fn", to see one particular simulated subject map
+# - "global" (or everything else), to see a superposition of all maps
     mayavi_tex_type = "global"
-    mayavi_rtex = None
-
-LARGE_BLOBS = True
+    mayavi_rtex = None  #don't change this
 
 #------------------------------------------------------------------
 def mesh_to_graph(vertices, poly):
@@ -152,8 +167,8 @@ if SHOW_SIMUL and mayavi_tex_type == "ref":
 ### Build 22 textures with an activation located around the nearest
 ### neighbor we just found
 dist = rgraph.dijkstra(nearest_id)
-dist_artifact1 = rgraph.dijkstra(7458)
-dist_artifact2 = rgraph.dijkstra(artifact_id)
+dist_artifact1 = rgraph.dijkstra(artifact_id)
+dist_artifact2 = rgraph.dijkstra(artifact2_id)
 global_rtex = -np.ones(rvertices.shape[0])  #summary texture
 subjects_with_artifact = []
 for i in range(1,23):
@@ -217,7 +232,7 @@ for i in range(1,23):
 if SHOW_SIMUL and not mayavi_rtex:
     mayavi_rtex = global_rtex.copy()
     
-# plot reference texture with mayavi
+# Plot chosen texture with mayavi
 if SHOW_SIMUL:
     mayavi_rmesh = mlab.triangular_mesh(
         rvertices[:,0], rvertices[:,1], rvertices[:,2], rtriangles,
@@ -226,57 +241,11 @@ if SHOW_SIMUL:
     rhlut = mayavi_rmesh.module_manager.scalar_lut_manager.lut.table.to_array()
     rhlut[0,:] = [127, 127, 127, 255]
     mayavi_rmesh.module_manager.scalar_lut_manager.lut.table = rhlut
-"""#
-### Plotting with Mayavi
-# colors
-lut_colors = np.array([[64,0,64,255], [128,0,64,255], [192,0,64,255],
-                       [64,0,128,255], [128,0,128,255], [192,0,128,255],
-                       [64,0,192,255], [128,0,192,255], [192,0,192,255],
-                       [0,64,64,255], [0,128,64,255], [0,192,64,255],
-                       [0,64,128,255], [0,128,128,255], [0,192,128,255],
-                       [0,64,192,255], [0,128,192,255], [0,192,192,255],
-                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
-                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
-                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
-                                        [64,128,64,255], [64,192,64,255],
-                       [64,64,128,255], [64,128,128,255], [64,192,128,255],
-                       [64,64,192,255], [64,128,192,255], [64,192,192,255],
-                       [192,64,64,255], [192,128,64,255], [192,192,64,255],
-                       [192,64,128,255], [192,128,128,255], [192,192,128,255],
-                       [192,64,192,255], [192,128,192,255],                 
-                       [64,64,64,255], [128,64,64,255], [192,64,64,255],
-                       [64,64,128,255], [128,64,128,255], [192,64,128,255],
-                       [64,64,192,255], [128,64,192,255], [192,64,192,255],
-                       [64,128,64,255], [128,128,64,255], [192,128,64,255],
-                       [64,128,128,255],                  [192,128,128,255],
-                       [64,128,192,255], [128,128,192,255], [192,128,192,255],
-                       [128,64,64,255], [128,128,64,255], [128,192,64,255],
-                       [128,64,128,255], [128,128,128,255], [128,192,128,255],
-                       [128,64,192,255], [128,128,192,255], [128,192,192,255],
-                       [64,0,0,255], [128,0,0,255], [192,0,0,255],
-                       [0,64,0,255], [0,128,0,255], [0,128,0,255],
-                       [0,0,64,255], [0,0,128,255], [0,0,192,255],
-                       [64,64,0,255], [128,64,0,255], [192,64,0,255],
-                       [64,128,0,255], [128,128,0,255], [192,128,0,255],
-                       [64,192,0,255], [128,192,0,255], [192,192,0,255]],
-                      dtype=int)
-mayavi_rmesh = mayavi.triangular_mesh(rvertices[:,0], rvertices[:,1],
-                                      rvertices[:,2], rtriangles,
-                                      scalars=global_rtex,
-                                      transparent=False, opacity=1.)
-rhlut = mayavi_rmesh.module_manager.scalar_lut_manager.lut.table.to_array()
-factor = int(np.amax(global_rtex)+1)
-ratio = 256./factor
-# brain background color
-rhlut[:np.floor(ratio),:] = np.array([127,127,127,255])
-for i in range(1,factor):
-    rhlut[i*int(ratio):(i+1)*int(ratio),:] = lut_colors[(6+i-2)%lut_colors.shape[0]]
-mayavi_rmesh.module_manager.scalar_lut_manager.lut.table = rhlut
-"""#
+
 
 ### Write texture output
-global_rtex_output = tio.Texture('%s/global_simul_2D.tex' %(simul_path),
-                                 data=global_rtex)
+global_rtex_output = tio.Texture(
+    '%s/global_simul_2D.tex' %(simul_path), data=global_rtex)
 global_rtex_output.write()
 
 subjects_with_artifact = np.asarray(subjects_with_artifact)
