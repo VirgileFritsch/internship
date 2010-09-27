@@ -3,11 +3,11 @@ import sys
 
 from nipy.neurospin.glm_files_layout import tio
 from gifti import loadImage
-from kuhnMunkres import maxWeightMatching
 import nipy.neurospin.graph.graph as fg
+from kuhnMunkres import maxWeightMatching
 
 from database_archi import *
-
+SUBJECT="s12069"
 #--------------------------------------------------------
 all_subj = ['s12069', 's12300', 's12401', 's12431', 's12508', 's12532', 's12539', 's12562','s12590', 's12635', 's12636', 's12898', 's12081', 's12165', 's12207', 's12344', 's12352', 's12370', 's12381', 's12405', 's12414', 's12432']
 #subj = ['s12069', 's12081', 's12300']
@@ -15,16 +15,11 @@ all_subj = ['s12069', 's12300', 's12401', 's12431', 's12508', 's12532', 's12539'
 subj2 = all_subj[:]
 subj1 = [SUBJECT]
 #--------------------------------------------------------
-bound = 24;
-gamma = 35./16.
-coord_type = "coord_test2"
+sigma = 9.7
+gamma = 2./(np.sqrt(2.*np.pi)*sigma)
+coord_type = "fcoord"
 
 #--------------------------------------------------------
-def phi(dik, bound):
-    """ Triweight kernel
-    """
-    dik[dik > bound] = bound
-    return 2. * (35./32.)*(1-((dik-bound)/bound)**2)**3
 
 def mesh_to_graph(vertices, poly):
     """
@@ -70,7 +65,7 @@ for s in all_subj:
     all_llinked[s] = []
     all_rlinked[s] = []
 
-all_scores = np.zeros((len(subj1),len(subj2)))
+#all_scores = np.zeros((len(subj1),len(subj2)))
 #removed = 1
 print 'Comparison %s -- gamma=%g' %(coord_type, gamma)
 for s1_id, s1 in enumerate(subj1):
@@ -137,43 +132,36 @@ for s1_id, s1 in enumerate(subj1):
             most_peaked_id = s1
         n = less_peaked.size
         p = most_peaked.size
-        if n != 0:
-            ldistances = np.zeros((n,p))
-            for i, vertex_id in enumerate(less_peaked):
-                ldistances[i,:] = \
-                            mean_lmesh_graph.dijkstra(vertex_id)[most_peaked]
-            # scale distances
-            ldistances = ((1. + np.sqrt(2.))/2.) * ldistances
-            ldistances = phi(ldistances, bound)
-            #ldistances = np.hstack((ldistances, gamma*np.ones((n,n))))
-            if (p-n) > 0:
-                ldistances = np.vstack((ldistances, gamma*np.ones((p-n,p))))
-            (Mu,Mv,val) = maxWeightMatching(-ldistances)
-            matching_res = ldistances[Mu.keys(), Mu.values()]
-            val = np.abs((val)/min(n,p))
-            print val
-            mask = np.where(matching_res < gamma)[0]
-            mask = mask[mask < less_peaked.size]
-            all_llinked[less_peaked_id].append(less_peaked[mask])
-            mask = np.where(matching_res >= gamma)[0]
-            mask = mask[mask < less_peaked.size]
-            all_lalone[less_peaked_id].append(less_peaked[mask])
-            mask = ldistances[Mv.values(), Mv.keys()]
-            
-            matching_res = ldistances[Mv.values(), Mv.keys()]
-            mask = np.where(matching_res < gamma)[0]
-            mask = mask[mask < most_peaked.size]
-            all_llinked[most_peaked_id].append(most_peaked[mask])
-            mask = np.where(matching_res >= gamma)[0]
-            mask = mask[mask < most_peaked.size]
-            all_lalone[most_peaked_id].append(most_peaked[mask])
-            
-            all_scores[s1_id,s2_id] = val
-        else:
-            val = p*gamma / 2.
-            print val
-            all_lalone[most_peaked_id].append(most_peaked)
-            all_scores[s1_id,s2_id] = val
+        ldistances = np.zeros((n,p))
+        for i, vertex_id in enumerate(less_peaked):
+            ldistances[i,:] = mean_lmesh_graph.dijkstra(vertex_id)[most_peaked]
+        # scale distances
+        ldistances = ((1. + np.sqrt(2.))/2.) * ldistances
+        ldistances = (2./(np.sqrt(2.*np.pi)*sigma)) * \
+                     (1. - np.exp(-ldistances**2/(2.*sigma**2)))
+        ldistances = \
+                np.hstack((ldistances, gamma*np.ones((n,1))))
+        if p+1-n > 0:
+            ldistances = \
+                np.vstack((ldistances, gamma*np.ones((p+1-n,p+1))))
+        (Mu,Mv,val) = maxWeightMatching(-ldistances)
+        matching_res = ldistances[Mu.keys(), Mu.values()]
+        print np.abs(val) - gamma
+        mask = np.where(matching_res < gamma)[0]
+        mask = mask[mask < less_peaked.size]
+        all_llinked[less_peaked_id].append(less_peaked[mask])
+        mask = np.where(matching_res >= gamma)[0]
+        mask = mask[mask < less_peaked.size]
+        all_lalone[less_peaked_id].append(less_peaked[mask])
+        mask = ldistances[Mv.values(), Mv.keys()]
+        
+        matching_res = ldistances[Mv.values(), Mv.keys()]
+        mask = np.where(matching_res < gamma)[0]
+        mask = mask[mask < most_peaked.size]
+        all_llinked[most_peaked_id].append(most_peaked[mask])
+        mask = np.where(matching_res >= gamma)[0]
+        mask = mask[mask < most_peaked.size]
+        all_lalone[most_peaked_id].append(most_peaked[mask])
                 
         ### ---------------
         ### Process right hemisphere
@@ -198,53 +186,47 @@ for s1_id, s1 in enumerate(subj1):
             most_peaked_id = s1
         n = less_peaked.size
         p = most_peaked.size
-        if n != 0:
-            rdistances = np.zeros((n,p))
-            for i, vertex_id in enumerate(less_peaked):
-                rdistances[i,:] = \
-                            mean_rmesh_graph.dijkstra(vertex_id)[most_peaked]
-            # scale distances
-            rdistances = ((1. + np.sqrt(2.))/2.) * rdistances
-            rdistances = phi(rdistances, bound)
-            #rdistances =  np.hstack((rdistances, gamma*np.ones((n,n))))
-            if (p - n) > 0:
-                rdistances =  np.vstack((rdistances, gamma*np.ones((p-n,p))))
-            (Mu, Mv, val) = maxWeightMatching(-rdistances)
-            val = np.abs((val)/min(n,p))
-            matching_res = rdistances[Mu.keys(), Mu.values()]
-            print val
-            # update dictionaries
-            mask = np.where(matching_res < gamma)[0]
-            mask = mask[mask < less_peaked.size]
-            all_rlinked[less_peaked_id].append(less_peaked[mask])
-            mask = np.where(matching_res >= gamma)[0]
-            mask = mask[mask < less_peaked.size]
-            all_ralone[less_peaked_id].append(less_peaked[mask])
-            mask = rdistances[Mv.values(), Mv.keys()]
+        rdistances = np.zeros((n,p))
+        for i, vertex_id in enumerate(less_peaked):
+            rdistances[i,:] = mean_rmesh_graph.dijkstra(vertex_id)[most_peaked]
+        # scale distances
+        rdistances = ((1. + np.sqrt(2.))/2.) * rdistances
+        rdistances = (2./(np.sqrt(2.*np.pi)*sigma)) * \
+                     (1. - np.exp(-rdistances**2/(2.*sigma**2)))
+        rdistances = \
+                np.hstack((rdistances, gamma*np.ones((n,1))))
+        if p+1-n > 0:
+            rdistances = \
+                np.vstack((rdistances, gamma*np.ones((p+1-n,p+1))))
+        (Mu, Mv, val) = maxWeightMatching(-rdistances)
+        matching_res = rdistances[Mu.keys(), Mu.values()]
+        print np.abs(val) - gamma
+        # update dictionaries
+        mask = np.where(matching_res < gamma)[0]
+        mask = mask[mask < less_peaked.size]
+        all_rlinked[less_peaked_id].append(less_peaked[mask])
+        mask = np.where(matching_res >= gamma)[0]
+        mask = mask[mask < less_peaked.size]
+        all_ralone[less_peaked_id].append(less_peaked[mask])
+        mask = rdistances[Mv.values(), Mv.keys()]
+        
+        matching_res = rdistances[Mv.values(), Mv.keys()]
+        mask = np.where(matching_res < gamma)[0]
+        mask = mask[mask < most_peaked.size]
+        all_rlinked[most_peaked_id].append(most_peaked[mask])
+        mask = np.where(matching_res >= gamma)[0]
+        mask = mask[mask < most_peaked.size]
+        all_ralone[most_peaked_id].append(most_peaked[mask])
             
-            matching_res = rdistances[Mv.values(), Mv.keys()]
-            mask = np.where(matching_res < gamma)[0]
-            mask = mask[mask < most_peaked.size]
-            all_rlinked[most_peaked_id].append(most_peaked[mask])
-            mask = np.where(matching_res >= gamma)[0]
-            mask = mask[mask < most_peaked.size]
-            all_ralone[most_peaked_id].append(most_peaked[mask])
-            
-            all_scores[s1_id,s2_id] += val
-        else:
-            val = p*gamma / 2.
-            print val
-            all_ralone[most_peaked_id].append(most_peaked)
-            all_scores[s1_id,s2_id] += val
-            
-
+    
+"""
 if s1 == 's12069':
-    np.savez('/volatile/comp_%s/comp_%s.npz' %(CONTRAST,coord_type), all_scores)
+    np.savez('/volatile/tmp.npz', all_scores)
 else:
-    toto = np.load('/volatile/comp_%s/comp_%s.npz' %(CONTRAST,coord_type))
+    toto = np.load('/volatile/tmp.npz')
     titi = np.vstack((toto['arr_0'], all_scores))
-    np.savez('/volatile/comp_%s/comp_%s.npz' %(CONTRAST,coord_type),titi)
-
+    np.savez('/volatile/tmp.npz',titi)
+"""
 
 def find_freq(results, vertex):
     count = 0
@@ -253,21 +235,14 @@ def find_freq(results, vertex):
             count += 1
     return count
 
-tmp_results = np.zeros((2,s1_rpeaks.size))
-for i, v in enumerate(s1_rpeaks):
+for v in s1_rpeaks:
     freq = find_freq(all_rlinked[SUBJECT], v)
     freq2 = find_freq(all_ralone[SUBJECT], v)
-    print v, "\t", ((freq-2.)/21.) * 100.
-    tmp_results[0,i] = v
-    tmp_results[1,i] = ((freq-2.)/21.) * 100.
-np.savez('/volatile/comp_%s/comp_%s_%s_right.npz' %(CONTRAST, coord_type, s1), tmp_results)
+    print v, "\t", ((freq-2.)/21.) * 100., "\t", ((freq2)/21.) * 100.
 
 print
-tmp_results = np.zeros((2,s1_lpeaks.size))
-for i, v in enumerate(s1_lpeaks):
+for v in s1_lpeaks:
     freq = find_freq(all_llinked[SUBJECT], v)
     freq2 = find_freq(all_lalone[SUBJECT], v)
-    print v, "\t", ((freq-2.)/21.) * 100., "\t"
-    tmp_results[0,i] = v
-    tmp_results[1,i] = ((freq-2.)/21.) * 100.
-np.savez('/volatile/comp_%s/comp_%s_%s_left.npz' %(CONTRAST, coord_type, s1), tmp_results)
+    print v, "\t", ((freq-2.)/21.) * 100., "\t", ((freq2)/21.) * 100.
+
