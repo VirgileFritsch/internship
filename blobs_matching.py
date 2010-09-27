@@ -74,39 +74,6 @@ DEBUG = True
 # write textures ?
 WRITE = True
 
-# special case when matching blobs of group analysis results
-if SUBJECT == "group":
-    GA_TYPE = "vrfx"
-    r_path = "/data/home/virgile/virgile_internship"
-    m_path = "%s/group_analysis/smoothed_FWHM0" % r_path
-    lmesh_path_gii = "%s/group_analysis/surf/lh.r.white.normalized.gii" % r_path
-    rmesh_path_gii = "%s/group_analysis/surf/rh.r.white.normalized.gii" % r_path
-    glm_ltex_path = "%s/left_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
-    glm_rtex_path = "%s/right_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
-    glm_data_path = "%s/%s_%s.nii" % (m_path, GA_TYPE, CONTRAST)
-    OUTPUT_DIR = "%s/%s/results" %(m_path, CONTRAST)
-    lresults_output = "left_%s_%s_results.tex" % (GA_TYPE, CONTRAST)
-    rresults_output = "right_%s_%s_results.tex" %(GA_TYPE, CONTRAST)
-    OUTPUT_ENTIRE_DOMAIN_DIR = "%s/%s/results_entire_domain" %(m_path, CONTRAST)
-    lresults_entire_domain_output = "left_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
-    rresults_entire_domain_output = \
-        "right_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
-    OUTPUT_AUX_DIR = "%s/%s/results_aux" %(m_path, CONTRAST)
-    lresults_aux_output = "left_%s_%s_results_aux.tex" \
-                          % (GA_TYPE, CONTRAST)
-    rresults_aux_output = "right_%s_%s_results_aux.tex" \
-                          % (GA_TYPE, CONTRAST)
-    OUTPUT_LARGE_AUX_DIR = "%s/%s/results_aux_large" %(m_path, CONTRAST)
-    lresults_aux_large_output = "left_%s_%s_results_aux_large.tex" \
-                          % (GA_TYPE, CONTRAST)
-    rresults_aux_large_output = "right_%s_%s_results_aux_large.tex" \
-                          % (GA_TYPE, CONTRAST)
-    OUTPUT_COORD_DIR = "%s/%s/results_coord" %(m_path, CONTRAST)
-    lresults_coord_output = "left_%s_%s_results_coord.tex" \
-                            % (GA_TYPE, CONTRAST)
-    rresults_coord_output = "right_%s_%s_results_coord.tex" \
-                            % (GA_TYPE, CONTRAST)
-    blobs3D_path = "%s/blobs3D_%s/leaves.nii" % (m_path, CONTRAST)
 #TEMP------------------------------------------------------------
 
 # colors

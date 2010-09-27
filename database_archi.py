@@ -1,10 +1,10 @@
-#from tmp_subject import *
+from tmp_subject import *
 import numpy as np
 
 ### Paths
 ROOT_PATH = "/volatile/subjects_database"
-SUBJECT = "s12069"
-CONTRAST = "audio-video_z_map"
+#SUBJECT = "f1"
+CONTRAST = "simulation"
 #------------------------------------------------------
 MAIN_PATH = "%s/%s" %(ROOT_PATH, SUBJECT)
 #-----------------------------------------------------#
@@ -80,30 +80,120 @@ blobs3D_path = '%s/experiments/%s/leaves.nii' %(MAIN_PATH, BLOBS3D_SUBDIR)
 
 ### Blobs matching output
 OUTPUT_DIR = '%s/experiments/smoothed_FWHM%g/%s/results' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_output = 'left.tex'
+rresults_output = 'right.tex'
 
 ### Blobs matching output (entire domain)
 OUTPUT_ENTIRE_DOMAIN_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_entire_domain' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_entire_domain_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_entire_domain_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_entire_domain_output = 'left'
+rresults_entire_domain_output = 'right.tex'
 
 ### Auxiliary results output
 OUTPUT_AUX_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_aux' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_aux_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_aux_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_aux_output = 'left.tex'
+rresults_aux_output = 'right.tex'
 
 ### Auxiliary large results output
 OUTPUT_LARGE_AUX_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_aux_large' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_aux_large_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_aux_large_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_aux_large_output = 'left.tex'
+rresults_aux_large_output = 'right.tex'
 
 ### Coordinates results output
 OUTPUT_COORD_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_coord' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_coord_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_coord_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_coord_output = 'left.tex'
+rresults_coord_output = 'right.tex'
 
 ### Former coordinates results output
 OUTPUT_FCOORD_DIR = '%s/experiments/smoothed_FWHM%g/%s/results_fcoord' %(MAIN_PATH, FWHM3D, CONTRAST)
-lresults_fcoord_output = 'left_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
-rresults_fcoord_output = 'right_%s_FWHM2D%g_smin2D%i_FWHM3D%g_smin3D%i.tex' %(CONTRAST, FWHM, SMIN, FWHM3D, SMIN3D)
+lresults_fcoord_output = 'left.tex'
+rresults_fcoord_output = 'right.tex'
+
+
+#--------------------------------
+# TODO: clean what is following.
+#--------------------------------
+
+# special case when matching blobs of group analysis results
+if SUBJECT == "group":
+    GA_TYPE = "vrfx"
+    r_path = "/data/home/virgile/virgile_internship"
+    m_path = "%s/group_analysis/smoothed_FWHM0" % r_path
+    lmesh_path_gii = "%s/group_analysis/surf/lh.r.white.normalized.gii" % r_path
+    rmesh_path_gii = "%s/group_analysis/surf/rh.r.white.normalized.gii" % r_path
+    glm_ltex_path = "%s/left_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
+    glm_rtex_path = "%s/right_%s_%s.tex" % (m_path, GA_TYPE, CONTRAST)
+    glm_data_path = "%s/%s_%s.nii" % (m_path, GA_TYPE, CONTRAST)
+    OUTPUT_DIR = "%s/%s/results" %(m_path, CONTRAST)
+    lresults_output = "left_%s_%s_results.tex" % (GA_TYPE, CONTRAST)
+    rresults_output = "right_%s_%s_results.tex" %(GA_TYPE, CONTRAST)
+    OUTPUT_ENTIRE_DOMAIN_DIR = "%s/%s/results_entire_domain" %(m_path, CONTRAST)
+    lresults_entire_domain_output = "left_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
+    rresults_entire_domain_output = \
+        "right_%s_%s_results_entire_domain.tex" % (GA_TYPE, CONTRAST)
+    OUTPUT_AUX_DIR = "%s/%s/results_aux" %(m_path, CONTRAST)
+    lresults_aux_output = "left_%s_%s_results_aux.tex" \
+                          % (GA_TYPE, CONTRAST)
+    rresults_aux_output = "right_%s_%s_results_aux.tex" \
+                          % (GA_TYPE, CONTRAST)
+    OUTPUT_LARGE_AUX_DIR = "%s/%s/results_aux_large" %(m_path, CONTRAST)
+    lresults_aux_large_output = "left_%s_%s_results_aux_large.tex" \
+                          % (GA_TYPE, CONTRAST)
+    rresults_aux_large_output = "right_%s_%s_results_aux_large.tex" \
+                          % (GA_TYPE, CONTRAST)
+    OUTPUT_COORD_DIR = "%s/%s/results_coord" %(m_path, CONTRAST)
+    lresults_coord_output = "left_%s_%s_results_coord.tex" \
+                            % (GA_TYPE, CONTRAST)
+    rresults_coord_output = "right_%s_%s_results_coord.tex" \
+                            % (GA_TYPE, CONTRAST)
+    blobs3D_path = "%s/blobs3D_%s/leaves.nii" % (m_path, CONTRAST)
+
+
+
+if CONTRAST == "simulation":
+    ROOT_PATH = "/volatile/virgile/internship/simulation/sim1"
+    MAIN_PATH = "%s/%s" %(ROOT_PATH, SUBJECT)
+    brain_mask_path = "%s/ref/mask.nii" %ROOT_PATH
+    LMESH = "lh.r.white.normalized"
+    RMESH = "rh.r.white.normalized"
+    LMESH_GII = "%s.gii" %LMESH
+    RMESH_GII = "%s.gii" %RMESH
+    lmesh_path_gii = '%s/ref/surf/%s' %(ROOT_PATH, LMESH_GII)
+    rmesh_path_gii = '%s/ref/surf/%s' %(ROOT_PATH, RMESH_GII)
+    glm_data_path = '%s/simul_3D.nii' %(ROOT_PATH)
+    glm_ltex_path = '%s/left_simul_2D.tex' %(MAIN_PATH)
+    glm_rtex_path = '%s/right_simul_2D.tex' %(MAIN_PATH)
+    THETA = 0.
+    ### Blobs matching output
+    OUTPUT_DIR = '%s/matching/results' %(MAIN_PATH)
+    lresults_output = 'left.tex'
+    rresults_output = 'right.tex'
+    
+    ### Blobs matching output (entire domain)
+    OUTPUT_ENTIRE_DOMAIN_DIR = '%s/matching/results_entire_domain' %(MAIN_PATH)
+    lresults_entire_domain_output = 'left.tex'
+    rresults_entire_domain_output = 'right.tex'
+    
+    ### Auxiliary results output
+    OUTPUT_AUX_DIR = '%s/matching/results_aux' %(MAIN_PATH)
+    lresults_aux_output = 'left.tex'
+    rresults_aux_output = 'right.tex'
+    
+    ### Auxiliary large results output
+    OUTPUT_LARGE_AUX_DIR = '%s/matching/results_aux_large' %(MAIN_PATH)
+    lresults_aux_large_output = 'left.tex'
+    rresults_aux_large_output = 'right.tex'
+    
+    ### Coordinates results output
+    OUTPUT_COORD_DIR = '%s/matching/results_coord' %(MAIN_PATH)
+    lresults_coord_output = 'left.tex'
+    rresults_coord_output = 'right.tex'
+    
+    ### Former coordinates results output
+    OUTPUT_FCOORD_DIR = '%s/matching/results_fcoord' %(MAIN_PATH)
+    lresults_fcoord_output = 'left.tex'
+    rresults_fcoord_output = 'right.tex'
+    
+    ### MidFormer coordinates results output
+    OUTPUT_MIDCOORD_DIR = '%s/matching/results_midcoord' %(MAIN_PATH)
+    lresults_midcoord_output = 'left.tex'
+    rresults_midcoord_output = 'right.tex'
