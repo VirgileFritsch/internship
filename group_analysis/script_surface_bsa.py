@@ -69,9 +69,10 @@ def bsa_vmm(bf, gf0, sub, gfc, dmax, thq, ths, verbose=0):
     #gf0 = np.concatenate(gf0)
 
     # launch the VMM
-    precision = 500.
+    precision = 200.
     #vmm = select_vmm(range(10, 40, 5 ), precision, True, gfc)
-    vmm = select_vmm_cv(range(10, 40, 5), precision, True, gfc, sub)
+    range_cv = range(3, min(30,gfc.shape[0])+1, 1)
+    vmm = select_vmm_cv(range_cv, precision, True, gfc, sub)
     if verbose:
         vmm.show(gfc)
 
@@ -226,7 +227,7 @@ smin = 0
 dmax = 10.
 ths = 4
 thq = 0.9
-BOOTSTRAP = True
+BOOTSTRAP = False
 
 subj_id = ['s12069', 's12300', 's12401', 's12431', 's12508', 's12532', 's12539', 's12562','s12590', 's12635', 's12636', 's12898', 's12081', 's12165', 's12207', 's12344', 's12352', 's12370', 's12381', 's12405', 's12414', 's12432']
 nbsubj = len(subj_id)
