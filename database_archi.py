@@ -3,8 +3,8 @@ import numpy as np
 
 ### Paths
 ROOT_PATH = "/volatile/subjects_database"
-#SUBJECT = "f1"
-CONTRAST = "simulation"
+#SUBJECT = "f4"
+CONTRAST = "computation-sentences_z_map"
 #------------------------------------------------------
 MAIN_PATH = "%s/%s" %(ROOT_PATH, SUBJECT)
 #-----------------------------------------------------#
@@ -163,6 +163,7 @@ if CONTRAST == "simulation":
     glm_ltex_path = '%s/left_simul_2D.tex' %(MAIN_PATH)
     glm_rtex_path = '%s/right_simul_2D.tex' %(MAIN_PATH)
     THETA = 0.
+    SMIN = 2
     ### Blobs matching output
     OUTPUT_DIR = '%s/matching/results' %(MAIN_PATH)
     lresults_output = 'left.tex'

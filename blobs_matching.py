@@ -46,7 +46,6 @@ from blob import Blob2D, Blob3D
 from database_archi import *
 
 
-
 #----- Choose 3D blobs to show (from 1 to ..., -3 to show everything)
 blobs3D_to_show = [-3]
 
@@ -737,14 +736,12 @@ if blobs2D_to_show_bckup[0] == -3.:
     rtex_coord = -np.ones(rtex.size)
     ltex_coord = -np.ones(ltex.size)
     for r in region.keys():
-        max_region_location = -1
         max_region = -1
-        max_region_hemisphere = ""
         for blob in region[r]:
             b = Blob2D.leaves[blob]
             row = np.where(b.regions_probas[:,0] == r)[0]
             if b.regions_probas[row,1] > max_region:
-                max_region = b.regions_probas[row,1]/100.
+                max_region = b.regions_probas[row,1]
                 max_region_hemisphere = b.hemisphere
                 max_region_location = b.vertices_id[b.get_argmax_activation()]
                 max_region_value = b.gf

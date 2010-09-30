@@ -7,7 +7,7 @@ Author: Virgile Fritsch, 2010
 
 """
 
-SHOW_SIMUL = True
+SHOW_SIMUL = False
 
 import sys, os
 import numpy as np
@@ -183,12 +183,14 @@ for i in range(1,23):
     if LARGE_BLOBS:
         neighborhood = rgraph.dijkstra(blob_location)
         # choose blob's wideness
-        blob_wideness = np.abs(
-            sigma_blob_wideness * np.random.randn() + \
-            mu_blob_wideness)
-        blob = np.where(neighborhood <= blob_wideness)[0]
-        new_rtex[blob] = i - 0.1
-        global_rtex[blob] = i - 0.1
+        blob = []
+        while len(blob) <= 2:
+            blob_wideness = np.abs(
+                sigma_blob_wideness * np.random.randn() + \
+                mu_blob_wideness)
+            blob = np.where(neighborhood <= blob_wideness)[0]
+        new_rtex[blob] = i
+        global_rtex[blob] = i
         np.savez('%s/f%d/blob_composition.npz' %(simul_path, i), blob)
     new_rtex[blob_location] = i
     global_rtex[blob_location] = i
@@ -206,13 +208,15 @@ for i in range(1,23):
         artifact_location = np.argmin(np.abs(dist_artifact-noise))
         if LARGE_BLOBS:
             neighborhood = rgraph.dijkstra(artifact_location)
-            #choose blob's wideness
-            artifact_wideness = np.abs(
-                sigma_artifact_wideness * np.random.randn() + \
-                mu_artifact_wideness)
-            artifact = np.where(neighborhood <= artifact_wideness)[0]
-            new_rtex[artifact] = i - 0.1
-            global_rtex[artifact] = i - 0.1
+            #choose artifact's wideness
+            artifact = []
+            while len(artifact) <= 2:
+                artifact_wideness = np.abs(
+                    sigma_artifact_wideness * np.random.randn() + \
+                    mu_artifact_wideness)
+                artifact = np.where(neighborhood <= artifact_wideness)[0]
+            new_rtex[artifact] = i
+            global_rtex[artifact] = i
             np.savez('%s/f%d/artifact_composition.npz'%(simul_path,i), artifact)
         new_rtex[artifact_location] = i
         global_rtex[artifact_location] = i
