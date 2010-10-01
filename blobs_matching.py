@@ -14,9 +14,9 @@ Authors: Virgile Fritsch and Bertrand Thirion, 2010
 
 """
 
-SHOW_MATCHING = False
-SHOW_HIERARCHY = False
-SHOW_OUTPUTS = False
+SHOW_MATCHING = True
+SHOW_HIERARCHY = True
+SHOW_OUTPUTS = True
 
 import sys, copy, os
 import numpy as np
@@ -711,6 +711,13 @@ if blobs2D_to_show_bckup[0] != -2.:
         blob = Blob2D.all_blobs[i]
         if (not isinstance(blob.associated_3D_blob, None.__class__)):
             value = blob.associated_3D_blob.id
+        elif len(blob.potentialy_associated) == 1:
+            value = blob.potentialy_associated[0].id
+        elif len(blob.potentialy_associated) == 2:
+            if blob.potentialy_associated[0].id != 0:
+                value = blob.potentialy_associated[0].id
+            else:
+                value = blob.potentialy_associated[1].id
         else:
             value = -0.3
         if blob.hemisphere == "left":
