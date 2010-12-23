@@ -14,8 +14,8 @@ Authors: Virgile Fritsch and Bertrand Thirion, 2010
 
 """
 
-SHOW_MATCHING = True
-SHOW_HIERARCHY = True
+SHOW_MATCHING = False
+SHOW_HIERARCHY = False
 SHOW_OUTPUTS = True
 
 import sys, copy, os
@@ -55,7 +55,7 @@ blobs2D_to_show = [-3]
 blobs2D_to_show_bckup = np.array(blobs2D_to_show).copy()
 
 #----- Choose kind of texture to plot with mayavi
-mayavi_outtex_type = "default"
+mayavi_outtex_type = "default3"
 
 #----- Model parameters
 GAMMA = 0.9  #a priori probability
@@ -68,10 +68,10 @@ threshold_maybe = 2.5e-1
 
 #TEMP----------------------------------------------------------
 # debug mode ?
-DEBUG = True
+DEBUG = False
 
 # write textures ?
-WRITE = True
+WRITE = False
 
 #TEMP------------------------------------------------------------
 
@@ -390,11 +390,14 @@ if blobs3D_to_show[0] == -3:
 if SHOW_OUTPUTS:
     mayavi.figure(1, bgcolor=(0.,0.,0.))
     label_image_data = np.zeros(domain3D.topology.shape[0])
+    blobs_centers = list()
     for k in blobs3D_to_show:
         blob_center = Blob3D.all_blobs[k].compute_center()
-        mayavi.points3d(blob_center[0], blob_center[1], blob_center[2],
-                        scale_factor=1)
+        blobs_centers.append(blob_center)
         label_image_data[nroi3D.label == leaves_id[k-1]] = 2*k
+    blobs_centers = np.concatenate(blobs_centers).reshape((-1,3))
+    points3d = mayavi.points3d(blobs_centers[:,0], blobs_centers[:,1],
+                               blobs_centers[:,2], scale_factor=1)
     # define data used for texturing
     label_image = np.zeros(volume_image_shape)
     label_image[mask_data != 0] = label_image_data
@@ -475,7 +478,7 @@ proba_bckup = proba.copy()
 
 ### Post-processing the results
 plot_matching_results(
-    proba, dist_display, GAMMA, SIGMA, './results/ver0/res.txt',
+    proba, dist_display, GAMMA, SIGMA, TEXT_OUTPUT,
     blobs2D_list, blobs3D_list)
 
 blobs2D_list_bckup = copy.deepcopy(blobs2D_list)
@@ -536,8 +539,14 @@ while np.any(old_proba != proba):
 
 ### Post-processing the results
 plot_matching_results(
-    proba, dist_display, GAMMA, SIGMA, './results/ver0/new_res.txt',
+    proba, dist_display, GAMMA, SIGMA, NEW_TEXT_OUTPUT,
     Blob2D.leaves.values(), blobs3D_list)
+# count the number of orphans 2D blobs
+orphans = 0
+for b in Blob2D.leaves.values():
+    if b.associated_3D_blob is not None and b.associated_3D_blob.id == 0:
+        orphans += 1
+np.savez('%s/orphans_number.npz' %RESULTS, data=[orphans])
 
 #-----------------------------------------
 #- TRY TO FIND SOME ARTEFACTS
@@ -739,9 +748,27 @@ if blobs2D_to_show_bckup[0] == -3.:
     if WRITE:
         output_ltex.write()
 
+    ### Finally write output (right and left) without orphan textures
+    rtex_noorph = rtex.copy()
+    rtex_noorph[rtex_noorph == 0.] = -1.
+    ltex_noorph = ltex.copy()
+    ltex_noorph[ltex_noorph == 0.] = -1.
+    out_dir = "%s_level%03d" %(OUTPUT_NOORPH_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_rtex_noorph = tio.Texture("%s/%s" %(out_dir,rresults_noorph_output),
+                              data=rtex_noorph)
+    if WRITE:
+        output_rtex_noorph.write()
+    output_ltex_noorph = tio.Texture("%s/%s" %(out_dir,lresults_noorph_output),
+                              data=ltex_noorph)
+    if WRITE:
+        output_ltex_noorph.write()
+
     ### Coordinates results
     rtex_coord = -np.ones(rtex.size)
     ltex_coord = -np.ones(ltex.size)
+    connections = list()
     for r in region.keys():
         max_region = -1
         for blob in region[r]:
@@ -751,11 +778,14 @@ if blobs2D_to_show_bckup[0] == -3.:
                 max_region = b.regions_probas[row,1]
                 max_region_hemisphere = b.hemisphere
                 max_region_location = b.vertices_id[b.get_argmax_activation()]
+                max_region_coord = b.vertices[b.get_argmax_activation()]
                 max_region_value = b.gf
         if max_region_hemisphere == "right":
             rtex_coord[max_region_location] = max_region_value
         else:
             ltex_coord[max_region_location] = max_region_value
+        connections.append(
+            (max_region_coord, Blob3D.all_blobs[r].compute_center()))
     for b in Blob2D.leaves.values():
         if b.associated_3D_blob is not None and b.associated_3D_blob.id == 0:
             row = np.where(b.association_probas[:,0] == -1)[0]
@@ -773,6 +803,36 @@ if blobs2D_to_show_bckup[0] == -3.:
     output_coord_ltex = tio.Texture("%s/%s" %(out_dir,lresults_coord_output), data=ltex_coord)
     if WRITE:
         output_coord_ltex.write()
+
+    ### Coordinates results (without orphans)
+    rtex_coord_noorph = -np.ones(rtex.size)
+    ltex_coord_noorph = -np.ones(ltex.size)
+    for r in region.keys():
+        max_region = -1
+        for blob in region[r]:
+            b = Blob2D.leaves[blob]
+            row = np.where(b.regions_probas[:,0] == r)[0]
+            if b.regions_probas[row,1] > max_region:
+                max_region = b.regions_probas[row,1]
+                max_region_hemisphere = b.hemisphere
+                max_region_location = b.vertices_id[b.get_argmax_activation()]
+                max_region_value = b.gf
+        if max_region_hemisphere == "right":
+            rtex_coord_noorph[max_region_location] = max_region_value
+        else:
+            ltex_coord_noorph[max_region_location] = max_region_value
+    # write results
+    out_dir = "%s_level%03d" %(OUTPUT_COORD_NOORPH_DIR, 1)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    output_coord_rtex_noorph = tio.Texture(
+        "%s/%s" %(out_dir,rresults_coord_noorph_output), data=rtex_coord_noorph)
+    if WRITE:
+        output_coord_rtex_noorph.write()
+    output_coord_ltex_noorph = tio.Texture(
+        "%s/%s" %(out_dir,lresults_coord_noorph_output), data=ltex_coord_noorph)
+    if WRITE:
+        output_coord_ltex_noorph.write()
         
 
     if mayavi_outtex_type == "coord":
@@ -781,6 +841,12 @@ if blobs2D_to_show_bckup[0] == -3.:
     elif mayavi_outtex_type == "fcoord":
         mayavi_routtex = rtex_fcoord
         mayavi_louttex = ltex_fcoord
+    elif mayavi_outtex_type == "coord_noorph":
+        mayavi_routtex = rtex_coord_noorph
+        mayavi_louttex = ltex_coord_noorph
+    elif mayavi_outtex_type == "noorph":
+        mayavi_routtex = rtex_noorph
+        mayavi_louttex = ltex_noorph
     else:
         mayavi_routtex = rtex
         mayavi_louttex = ltex
@@ -824,6 +890,19 @@ if SHOW_OUTPUTS:
     surface.module_manager.scalar_lut_manager.data_name = u''
     
     # plot left hemisphere
+    if mayavi_outtex_type == "default3":
+        lmesh = loadImage('%s/surf/lh.r.white.normalized.inflated.gii' \
+                          %MAIN_PATH)
+        c = lmesh.getArrays()[0]
+        t = lmesh.getArrays()[-1]
+        lvertices = c.getData()
+        ltriangles = t.getData()
+        rmesh = loadImage('%s/surf/rh.r.white.normalized.inflated.gii' \
+                          %MAIN_PATH)
+        c = rmesh.getArrays()[0]
+        t = rmesh.getArrays()[-1]
+        rvertices = c.getData()
+        rtriangles = t.getData()
     mayavi_lmesh = mayavi.triangular_mesh(
         lvertices[:,0], lvertices[:,1], lvertices[:,2], ltriangles,
         scalars=mayavi_louttex, transparent=False, opacity=1.,
@@ -843,6 +922,14 @@ if SHOW_OUTPUTS:
     mayavi_rmesh.module_manager.scalar_lut_manager.use_default_range = False
     mayavi_rmesh.module_manager.scalar_lut_manager.data_range = \
                                         np.array([-1.,(nb_colors-4.)/2.])
+
+    if mayavi_outtex_type == "default2":
+        for couple in connections:
+            mayavi.plot3d(np.array([couple[0][0], couple[1][0]]),
+                          np.array([couple[0][1], couple[1][1]]),
+                          np.array([couple[0][2], couple[1][2]]),
+                          tube_radius=0.25, color=(0.,1.,0.))
+
 
 if SHOW_OUTPUTS:
     # enable mayavi rendering (because we have disabled it)
