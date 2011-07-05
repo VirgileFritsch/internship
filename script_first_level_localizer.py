@@ -1,5 +1,5 @@
 """
-Script that perform the first-level analysis on a subject 4D fMRI acquisition.
+Script that performs the first-level analysis on a subject 4D fMRI acquisition.
 
 Author : Lise Favre, Bertrand Thirion, 2008-2010
 """
