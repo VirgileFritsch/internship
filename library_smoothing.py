@@ -10,7 +10,6 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-import mesh_processing as mep
 
 # -----------------------------------------------------------
 # --------- Functions for validating ------------------------
@@ -274,7 +273,6 @@ def compute_areas_and_cotangentes(polygons, vertices):
            'The shape of the <vertices> parameter must be (nb_vertices, 3)'
         
     # some initializations...
-    nb_vertices = vertices.shape[0]
     nb_polygons = polygons.shape[0]
     # get the polygons edges as vectors
     permutation_aux = np.array([(0,0,1), (1,0,0), (0,1,0)], dtype=int)
@@ -299,6 +297,7 @@ def compute_areas_and_cotangentes(polygons, vertices):
                             np.sum(vCB_from_polygons * vAB_from_polygons, 1)
     edges_dot_product_of_polygons[2] = \
                       -1. * np.sum(vAC_from_polygons * vCB_from_polygons, 1)
+    """
     if DEBUG_MODE:
         # compute edges lenghts :
         norm_AB = np.sqrt(np.sum(vAB_from_polygons**2, 1))
@@ -314,6 +313,7 @@ def compute_areas_and_cotangentes(polygons, vertices):
         sinus[0] = polygons_double_areas / (norm_AB * norm_AC)
         sinus[1] = polygons_double_areas / (norm_CB * norm_AB)
         sinus[2] = polygons_double_areas / (norm_AC * norm_CB)
+    """
     # compute angles cotangente values as cos/sin
     # (note that sinus is never equal to zero in a triangular mesh)
     polygons_cotan = edges_dot_product_of_polygons / polygons_double_areas

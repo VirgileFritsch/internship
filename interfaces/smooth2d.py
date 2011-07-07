@@ -57,10 +57,10 @@ class Smooth2D(BaseInterface):
             print "Smoothing: processing %s hemisphere:" % hemisphere
             sys.stdout.flush()
             if hemisphere == "right":
-                mesh_path = self.inputs.right_hemisphere
+                mesh_path = self.inputs.mesh_right
                 orig_tex_path = self.inputs.raw_texture_right
             else:
-                mesh_path = self.inputs.left_hemisphere
+                mesh_path = self.inputs.mesh_left
                 orig_tex_path = self.inputs.raw_texture_left
             
             ### Get information from input mesh
@@ -110,7 +110,7 @@ class Smooth2D(BaseInterface):
             sys.stdout.flush()
             _, base, _ = split_filename(orig_tex_path)
             output_tex = tio.Texture(
-                's' + base + '_fwhm' + fwhm + '.tex',
+                's' + base + '_fwhm' + str(fwhm) + '.tex',
                 data=smoothed_activation_data)
             output_tex.write()
             
@@ -126,7 +126,7 @@ class Smooth2D(BaseInterface):
                 orig_tex_path = self.inputs.raw_texture_left
             _, base, _ = split_filename(orig_tex_path)
             outputs["smoothed_texture_%s" % hemisphere] = os.path.abspath(
-                's' + base + '_fwhm' + fwhm + '.tex')
+                's' + base + '_fwhm' + str(fwhm) + '.tex')
         return outputs
 
 

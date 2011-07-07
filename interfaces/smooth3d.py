@@ -44,7 +44,7 @@ class Smooth3D(BaseInterface):
 
         # Save output image
         _, base, _ = split_filename(fname)
-        nb.save(output_image, 's' + base + '_fwhm' + fwhm + '.nii')
+        nb.save(output_image, 's' + base + '_fwhm' + str(fwhm) + '.nii')
         
         return runtime
     
@@ -54,5 +54,5 @@ class Smooth3D(BaseInterface):
         fwhm = self.inputs.fwhm
         _, base, _ = split_filename(fname)
         outputs["smoothed_image"] = os.path.abspath(
-            base + '_fwhm' + fwhm + '.nii')
+            's' + base + '_fwhm' + str(fwhm) + '.nii')
         return outputs
